@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Читательский клуб: обратная связь</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1 class="visually-hidden">Book club contact form</h1>
+      <form id="contact-form" lang="en">
+        <fieldset>
+          <legend>Full name</legend>
+          <div class="row two">
+            <input
+              aria-label="First name"
+              name="firstName"
+              autocomplete="given-name"
+              placeholder="First Name"
+            />
+            <input
+              aria-label="Last name"
+              name="lastName"
+              autocomplete="family-name"
+              placeholder="Last Name"
+            />
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Address</legend>
+          <input
+            aria-label="Street address"
+            name="street"
+            autocomplete="street-address"
+            placeholder="Street Address"
+          />
+          <div class="row three address-row">
+            <input
+              aria-label="City"
+              name="city"
+              autocomplete="address-level2"
+              placeholder="City"
+            />
+            <input
+              aria-label="State"
+              name="state"
+              autocomplete="address-level1"
+              placeholder="State"
+            />
+            <input
+              aria-label="ZIP code"
+              name="zip"
+              autocomplete="postal-code"
+              placeholder="ZIP Code"
+            />
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Contact Information</legend>
+          <div class="row two">
+            <input
+              aria-label="Email (required)"
+              type="email"
+              name="email"
+              autocomplete="email"
+              placeholder="Email*"
+              required
+            />
+            <input
+              aria-label="Phone"
+              type="tel"
+              name="phone"
+              autocomplete="tel"
+              placeholder="Phone"
+            />
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Questions / Comments</legend>
+          <textarea
+            aria-label="Message (required)"
+            name="message"
+            placeholder="Message*"
+            rows="3"
+            required
+          ></textarea>
+        </fieldset>
+        <label class="consent">
+          <input type="checkbox" name="updates" value="yes" />
+          <span>Update me on deals and special offers via email.</span>
+        </label>
+        <button type="submit">Submit</button>
+      </form>
+    </main>
+  </body>
+</html>
