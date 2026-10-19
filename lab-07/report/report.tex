@@ -1,0 +1,153 @@
+% !TeX program = xelatex
+\RequirePackage{fix-cm}
+\documentclass[14pt,a4paper]{extarticle}
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\input{build/font-path.tex}
+\ifdefined\reportFontPath
+  \setmainfont{Times.TTF}[Path=\reportFontPath,BoldFont=Timesbd.TTF,ItalicFont=Timesi.TTF,BoldItalicFont=Timesbi.TTF]
+  \newfontfamily\cyrillicfont{Times.TTF}[Path=\reportFontPath,BoldFont=Timesbd.TTF,ItalicFont=Timesi.TTF,BoldItalicFont=Timesbi.TTF,Script=Default]
+\else
+  \setmainfont{Times New Roman}
+  \newfontfamily\cyrillicfont{Times New Roman}
+\fi
+\setmonofont{FreeMono}
+\newfontfamily\cyrillicfonttt{FreeMono}
+\usepackage{polyglossia}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+\usepackage[left=30mm,right=10mm,top=20mm,bottom=20mm,footskip=10mm]{geometry}
+\usepackage{setspace}
+\makeatletter
+\renewcommand{\normalsize}{\@setfontsize\normalsize{14bp}{16.8bp}}
+\makeatother
+\onehalfspacing
+\AtBeginDocument{\normalsize}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\usepackage{indentfirst}
+\usepackage{array,tabularx,graphicx,float,caption,fvextra,xcolor}
+\DeclareCaptionLabelSeparator{gost}{~—~}
+\captionsetup{font=small,labelsep=gost,justification=centering,singlelinecheck=false}
+\captionsetup[table]{justification=raggedright,position=top,skip=6pt}
+\captionsetup[figure]{skip=8pt}
+\addto\captionsrussian{\renewcommand{\figurename}{Рисунок}\renewcommand{\tablename}{Таблица}}
+\usepackage{titlesec}
+\titleformat{\section}[block]{\normalfont\bfseries\centering}{\thesection.}{.5em}{\MakeUppercase}
+\titlespacing*{\section}{0pt}{0pt}{18pt}
+\usepackage{enumitem}
+\usepackage{xurl}
+\urlstyle{same}
+\usepackage[hidelinks,unicode,pdfauthor={Матвеев М. А.},pdftitle={Лабораторная работа №7. Адаптивная вёрстка и медиазапросы}]{hyperref}
+\pagestyle{plain}
+\emergencystretch=2em
+\clubpenalty=10000
+\widowpenalty=10000
+\raggedbottom
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{{\fontsize{12}{14}\selectfont\texttt{#1}}}
+\input{build/highlight-style.tex}
+\newcommand{\listing}[1]{\begingroup\singlespacing\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}\input{build/#1.tex}\endgroup}
+
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\bfseries
+МИНОБРНАУКИ РОССИИ\\
+Федеральное государственное автономное\\
+образовательное учреждение высшего образования\\
+«Санкт-Петербургский государственный\\
+электротехнический университет «ЛЭТИ»\\
+им. В.И. Ульянова (Ленина)»\\
+Кафедра информационных систем
+\end{center}
+\vspace{30mm}
+\begin{center}
+\textbf{ОТЧЕТ ПО ЛАБОРАТОРНОЙ РАБОТЕ №7}\\[8mm]
+«Адаптивная вёрстка и медиазапросы»
+\end{center}
+\vfill
+\noindent\begin{tabularx}{\textwidth}{@{}lXr@{}}
+Студент гр. 4372 & \centering\rule{25mm}{0.3pt} & Матвеев М. А.\\[8mm]
+Преподаватель & \centering\rule{25mm}{0.3pt} & Нечитайленко Р. А.\\
+\end{tabularx}
+\vspace{20mm}
+\begin{center}
+Санкт-Петербург\\
+2026
+\end{center}
+\end{titlepage}
+\setcounter{page}{2}
+
+\section{Цель и выполнение работы}
+Цель работы: изменить оформление страницы с помощью медиазапросов и построить адаптивную сетку карточек.
+
+В \code{media.html} показана реплика Кэна Канеки из «Токийского гуля»: «Сколько будет тысяча минус семь?». Цвет текста зависит от ширины окна: до 480~px он красный, от 481 до 800~px зелёный, свыше 800~px синий. Условия \code{max-width} включают пороговые значения.
+
+Страница \code{assignment.html} повторяет макет с заголовком «Заголовок сайта», исходной иллюстрацией и текстом Lorem ipsum. Сетка состоит из трёх колонок, при ширине до 800~px из двух, до 480~px из одной. Изображение показано из неизменённого снимка с помощью позиционирования и \code{overflow: hidden}.
+
+В \code{index.html} та же сетка содержит заметки клуба «Манга после занятий». Этот вариант дополняет страницу по образцу.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=120mm,keepaspectratio]{assets/assignment-desktop.png}
+\caption{Сетка карточек при ширине окна 1426 px}
+\end{figure}
+
+\clearpage
+\section{Проверка медиазапросов}
+В Chromium 153 проверены цвет текста и число колонок на порогах медиазапросов и соседних значениях ширины.
+\begin{table}[H]
+\caption{Проверка порогов медиазапросов}
+\begingroup\fontsize{12}{14}\selectfont\singlespacing
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|}
+\hline
+Ширина окна, px & Цвет текста & Число колонок\\ \hline
+320 и 480 & Красный & 1\\ \hline
+481 и 800 & Зелёный & 2\\ \hline
+801 и 1426 & Синий & 3\\ \hline
+\end{tabularx}
+\endgroup
+\end{table}
+
+При ширине окна 320, 375, 768 и 1440~px горизонтальной прокрутки нет. Между примером смены цвета и карточками можно перейти по ссылкам.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=100mm,keepaspectratio]{assets/assignment-mobile.png}
+\caption{Верхняя часть страницы при ширине окна 375 px}
+\end{figure}
+
+\vspace{4mm}
+\section{Результат}
+При изменении ширины окна содержимое и порядок карточек сохраняются. Их высота зависит от объёма текста, изображения загружаются локально. Переключение стилей выполняется средствами CSS без JavaScript.
+
+
+\clearpage
+\section{Исходный код: assignment.html}
+\listing{assignment.html}
+
+\clearpage
+\section{Исходный код: style.scss}
+\listing{style.scss}
+
+\vspace{4mm}
+\section{Исходный код: media.html}
+\listing{media.html}
+
+\vspace{4mm}
+\noindent\begin{minipage}{\textwidth}
+\section{Исходный код: media.scss}
+\listing{media.scss}
+\end{minipage}
+\clearpage
+\section*{Список использованных источников}
+\begin{enumerate}[label=\arabic*.,leftmargin=8mm,itemsep=8pt,parsep=0pt]
+\item Медиа-запросы // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/value/media}.
+\item overflow // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/overflow}.
+\item box-sizing // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/box-sizing}.
+\item Basic concepts of grid layout // MDN Web Docs. URL: \url{https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Basic_concepts}.
+\item Dart Sass Command-Line Interface // Sass. URL: \url{https://sass-lang.com/documentation/cli/dart-sass/}.
+\item Tokyo Ghoul. Episode 12: Ghoul // Crunchyroll. URL: \url{https://www.crunchyroll.com/watch/GK9U34MXN/ghoul}.
+\end{enumerate}
+\end{document}

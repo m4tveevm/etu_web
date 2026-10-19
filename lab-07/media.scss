@@ -1,0 +1,37 @@
+body {
+  margin: 8px;
+  font-family: "Times New Roman", serif;
+}
+
+a {
+  color: #185b80;
+  font:
+    16px Arial,
+    sans-serif;
+}
+
+p {
+  margin: 0 0 24px;
+  font-size: 30px;
+  font-weight: bold;
+  color: blue;
+  @media (max-width: 800px) {
+    color: green;
+  }
+  @media (max-width: 480px) {
+    color: red;
+  }
+}
+
+.quote {
+  margin: 0 0 24px;
+  blockquote {
+    margin: 0;
+  }
+  figcaption {
+    font:
+      16px/1.5 Arial,
+      sans-serif;
+    color: #333;
+  }
+}
