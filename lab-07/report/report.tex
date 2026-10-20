@@ -83,9 +83,9 @@
 \section{Цель и выполнение работы}
 Цель работы: изменить оформление страницы с помощью медиазапросов и построить адаптивную сетку карточек.
 
-В \code{media.html} цвет текста зависит от ширины окна: до 480~px он красный, от 481 до 800~px зелёный, свыше 800~px синий. Условия \code{max-width} включают пороговые значения.
+В \code{media.html} показана реплика Кэна Канеки из «Токийского гуля»: «Сколько будет тысяча минус семь?». Цвет текста зависит от ширины окна: до 480~px он красный, от 481 до 800~px зелёный, свыше 800~px синий. Условия \code{max-width} включают пороговые значения.
 
-Страница \code{index.html} содержит шесть карточек с иллюстрациями и текстом. Сетка состоит из трёх колонок, при ширине до 800~px из двух, до 480~px из одной. Иллюстрация взята из предоставленного образца. CSS скрывает лишнюю часть снимка, сам файл изображения не изменён.
+Страница \code{index.html} содержит шесть карточек с заметками читательского клуба «Манга после занятий». Сетка состоит из трёх колонок, при ширине до 800~px из двух, до 480~px из одной. Изображение кофе и раскрытой манги помещено в квадратную область. Свойство \code{object-fit: cover} заполняет её с сохранением пропорций.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=150mm,keepaspectratio]{assets/desktop.png}
@@ -125,25 +125,27 @@
 \section{Исходный код: index.html}
 \listing{index.html}
 
-\clearpage
+\vspace{4mm}
 \section{Исходный код: style.scss}
 \listing{style.scss}
 
-\vspace{4mm}
+\clearpage
 \section{Исходный код: media.html}
 \listing{media.html}
 
 \vspace{4mm}
+\noindent\begin{minipage}{\textwidth}
 \section{Исходный код: media.scss}
 \listing{media.scss}
+\end{minipage}
 \clearpage
 \section*{Список использованных источников}
 \begin{enumerate}[label=\arabic*.,leftmargin=8mm,itemsep=8pt,parsep=0pt]
 \item Медиа-запросы // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/value/media}.
 \item overflow // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/overflow}.
-\item position // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/position}.
 \item box-sizing // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/box-sizing}.
 \item Basic concepts of grid layout // MDN Web Docs. URL: \url{https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Basic_concepts}.
 \item Dart Sass Command-Line Interface // Sass. URL: \url{https://sass-lang.com/documentation/cli/dart-sass/}.
+\item Tokyo Ghoul. Episode 12: Ghoul // Crunchyroll. URL: \url{https://www.crunchyroll.com/watch/GK9U34MXN/ghoul}.
 \end{enumerate}
 \end{document}

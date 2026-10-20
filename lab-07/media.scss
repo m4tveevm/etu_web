@@ -21,3 +21,16 @@ p {
     color: red;
   }
 }
+
+.quote {
+  margin: 0 0 24px;
+  blockquote {
+    margin: 0;
+  }
+  figcaption {
+    font:
+      16px/1.5 Arial,
+      sans-serif;
+    color: #333;
+  }
+}
