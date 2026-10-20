@@ -26,7 +26,7 @@
 \setlength{\parindent}{1.25cm}
 \setlength{\parskip}{0pt}
 \usepackage{indentfirst}
-\usepackage{array,tabularx,graphicx,float,caption,fvextra}
+\usepackage{array,tabularx,graphicx,float,caption,fvextra,xcolor}
 \DeclareCaptionLabelSeparator{gost}{~—~}
 \captionsetup{font=small,labelsep=gost,justification=centering,singlelinecheck=false}
 \captionsetup[table]{justification=raggedright,position=top,skip=6pt}
@@ -46,7 +46,8 @@
 \raggedbottom
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\code}[1]{{\fontsize{12}{14}\selectfont\texttt{#1}}}
-\newcommand{\listing}[1]{\begingroup\singlespacing\VerbatimInput[breaklines=true,breakanywhere=true,fontsize=\fontsize{9.5}{11.5}\selectfont,numbers=left,numbersep=6pt,xleftmargin=16pt]{#1}\endgroup}
+\input{build/highlight-style.tex}
+\newcommand{\listing}[1]{\begingroup\singlespacing\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}\input{build/#1.tex}\endgroup}
 
 \begin{document}
 \begin{titlepage}
@@ -80,11 +81,11 @@
 \setcounter{page}{2}
 
 \section{Цель и выполнение работы}
-Цель работы: воспроизвести космическую композицию с помощью относительного и абсолютного позиционирования и управлять перекрытием изображений через \code{z-index}.
+Цель работы: воспроизвести космическую композицию с помощью относительного и абсолютного позиционирования, задать порядок наложения изображений через \code{z-index}.
 
-Контейнер \code{composition} имеет размер 600×400~px и \code{position: relative}. Фон подключён в CSS. Семь объектов размещены элементами \code{img} с абсолютным позиционированием. Их координаты отсчитываются от контейнера.
+Для контейнера \code{composition} заданы размер 600×400~px и \code{position: relative}. Фон подключён в CSS. Семь изображений \code{img} имеют абсолютное позиционирование, их координаты отсчитываются от контейнера.
 
-Большая жёлтая планета перекрывает часть синей планеты и ракеты. Летающая тарелка находится перед жёлтой планетой. Выходящие за границу композиции части изображений скрываются свойством \code{overflow: hidden}.
+Большая жёлтая планета перекрывает часть синей планеты и ракеты, а летающая тарелка расположена перед ней. Свойство \code{overflow: hidden} скрывает части изображений за границами композиции.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=125mm,keepaspectratio]{assets/desktop.png}
@@ -111,24 +112,25 @@
 \endgroup
 \end{table}
 
-В Chromium 153 подтверждены размеры контейнера, загрузка всех семи изображений и абсолютное позиционирование объектов. Проверка точки пересечения ракеты и жёлтой планеты показала, что верхний элемент в этой области является планетой.
+В Chromium 153 все семь изображений загрузились и заняли заданные позиции. В области пересечения ракеты и жёлтой планеты планета отображается сверху.
 
-На узком экране композиция сохраняет размер 600×400~px и прокручивается внутри собственного контейнера. Положение объектов при этом не меняется. Полученная композиция повторяет расположение и перекрытие объектов образца.
+На узком экране композиция сохраняет размер 600×400~px и прокручивается внутри контейнера. Координаты и порядок наложения объектов остаются прежними.
 
 
 \clearpage
 \section{Исходный код: index.html}
-\listing{../index.html}
+\listing{index.html}
 
 \clearpage
-\section{Исходный код: style.css}
-\listing{../style.css}
+\section{Исходный код: style.scss}
+\listing{style.scss}
 \clearpage
 \section*{Список использованных источников}
 \begin{enumerate}[label=\arabic*.,leftmargin=8mm,itemsep=8pt,parsep=0pt]
-\item position // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/position} (дата обращения: 20.10.2026).
-\item z-index // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/z-index} (дата обращения: 20.10.2026).
-\item overflow // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/overflow} (дата обращения: 20.10.2026).
-\item background // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/background} (дата обращения: 20.10.2026).
+\item position // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/position}.
+\item z-index // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/z-index}.
+\item overflow // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/overflow}.
+\item background // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/background}.
+\item Dart Sass Command-Line Interface // Sass. URL: \url{https://sass-lang.com/documentation/cli/dart-sass/}.
 \end{enumerate}
 \end{document}
