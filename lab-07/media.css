@@ -1,0 +1,9 @@
+body { margin: 8px; font-family: "Times New Roman", serif; }
+p { margin: 0 0 24px; font-size: 30px; color: blue; }
+a { color: #185b80; font: 16px Arial, sans-serif; }
+@media (max-width: 800px) {
+    p { color: green; }
+}
+@media (max-width: 480px) {
+    p { color: red; }
+}
