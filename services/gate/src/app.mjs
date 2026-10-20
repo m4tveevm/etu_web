@@ -122,7 +122,12 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
       if (!path || path.startsWith('auth/') || path.startsWith('api/')) return reply(404, 'Страница не найдена.');
       const object = await cloud.object(path);
       if (!object) return reply(404, 'Страница не найдена.');
-      return reply(200, object.bytes, { 'content-type': object.contentType });
+      const frameHeaders = /^lab-\d{2}\/[^/]+\.html$/.test(path)
+        && object.contentType.startsWith('text/html')
+        ? { 'x-frame-options': 'SAMEORIGIN', 'content-security-policy':
+          SECURITY_HEADERS['content-security-policy'].replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+        : {};
+      return reply(200, object.bytes, { 'content-type': object.contentType, ...frameHeaders });
     } catch {
       audit('request_failed');
       return reply(503, 'Сервис временно недоступен.', transactionCleared
