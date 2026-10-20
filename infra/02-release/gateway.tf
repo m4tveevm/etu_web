@@ -18,7 +18,7 @@ resource "yandex_api_gateway" "site" {
   name              = "${var.foundation.name_prefix}-site"
   description       = "TLS entrypoint; every path and method passes through the private gate."
   labels            = local.labels
-  execution_timeout = "30s"
+  execution_timeout = "30"
 
   spec = yamlencode({
     openapi = "3.0.0"
