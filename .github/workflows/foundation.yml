@@ -1,0 +1,62 @@
+name: Foundation infrastructure
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Review a plan or apply the freshly generated plan
+        required: true
+        type: choice
+        default: plan
+        options: [plan, apply]
+permissions:
+  contents: read
+concurrency:
+  group: etu-web-foundation
+  cancel-in-progress: false
+jobs:
+  foundation:
+    if: github.ref == 'refs/heads/main' && vars.ETU_INFRA_ENABLED == 'true'
+    environment: infrastructure
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2
+        with:
+          tofu_version: '1.13.0'
+          tofu_wrapper: false
+      - id: iam
+        uses: yc-actions/yc-iam-token-fed@bee3beba33d7936b3be69a6e57f847bb71f9958f
+        with:
+          yc-sa-id: ${{ vars.YC_INFRA_SERVICE_ACCOUNT_ID }}
+      - name: Plan foundation
+        env:
+          YC_TOKEN: ${{ steps.iam.outputs.token }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_FOUNDATION_STATE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_FOUNDATION_STATE_SECRET_ACCESS_KEY }}
+          FOUNDATION_CONFIG: ${{ vars.TF_FOUNDATION_CONFIG }}
+          FOUNDATION_BACKEND: ${{ vars.TF_FOUNDATION_BACKEND_CONFIG }}
+        run: |
+          set -eu
+          umask 077
+          printf '%s' "$FOUNDATION_CONFIG" > "$RUNNER_TEMP/foundation.tfvars.json"
+          printf '%s' "$FOUNDATION_BACKEND" > "$RUNNER_TEMP/foundation-backend.hcl"
+          tofu -chdir=infra/01-foundation init -input=false -lockfile=readonly -backend-config="$RUNNER_TEMP/foundation-backend.hcl"
+          tofu -chdir=infra/01-foundation plan -input=false \
+            -var-file="$RUNNER_TEMP/foundation.tfvars.json" -out="$RUNNER_TEMP/foundation.tfplan"
+          tofu -chdir=infra/01-foundation show -json "$RUNNER_TEMP/foundation.tfplan" > "$RUNNER_TEMP/foundation-plan.json"
+          python3 -c 'import json,sys; p=json.load(open(sys.argv[1])); assert not any("delete" in r["change"]["actions"] for r in p.get("resource_changes",[])), "Destructive plan requires a separate review"' "$RUNNER_TEMP/foundation-plan.json"
+      - name: Apply requested plan
+        if: inputs.operation == 'apply'
+        env:
+          YC_TOKEN: ${{ steps.iam.outputs.token }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_FOUNDATION_STATE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_FOUNDATION_STATE_SECRET_ACCESS_KEY }}
+        run: tofu -chdir=infra/01-foundation apply -input=false "$RUNNER_TEMP/foundation.tfplan"
+      - name: Remove temporary plans
+        if: always()
+        run: rm -f "$RUNNER_TEMP/foundation.tfvars.json" "$RUNNER_TEMP/foundation-backend.hcl" "$RUNNER_TEMP/foundation.tfplan" "$RUNNER_TEMP/foundation-plan.json"

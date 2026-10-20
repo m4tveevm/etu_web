@@ -1,0 +1,123 @@
+name: Release application
+on:
+  workflow_run:
+    workflows: [Validate labs and services]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: etu-web-production
+  cancel-in-progress: false
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      vars.ETU_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      YC_CLI_INITIALIZATION_SILENCE: 'true'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-${{ github.event.workflow_run.head_sha }}
+          path: dist
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Verify artifact before cloud authentication
+        run: |
+          python3 infra/02-release/upload.py --directory dist/site
+          python3 -c 'import json, os; assert json.load(open("dist/site/manifest.json"))["releaseId"] == os.environ["RELEASE_SHA"]'
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2
+        with:
+          tofu_version: '1.13.0'
+          tofu_wrapper: false
+      - run: bash infra/02-release/install-yc.sh
+      - name: Prepare deployment settings and check separate actors
+        env:
+          RUNTIME_CONFIG: ${{ secrets.ETU_RUNTIME_CONFIG }}
+          RUNTIME_BACKEND: ${{ vars.TF_RUNTIME_BACKEND_CONFIG }}
+          UPLOAD_SERVICE_ACCOUNT_ID: ${{ vars.YC_RELEASE_SERVICE_ACCOUNT_ID }}
+          RUNTIME_SERVICE_ACCOUNT_ID: ${{ vars.YC_RUNTIME_SERVICE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$RUNTIME_CONFIG" > "$RUNNER_TEMP/runtime-config.json"
+          printf '%s' "$RUNTIME_BACKEND" > "$RUNNER_TEMP/runtime-backend.hcl"
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          config = json.loads((Path(os.environ['RUNNER_TEMP']) / 'runtime-config.json').read_text())
+          upload = os.environ['UPLOAD_SERVICE_ACCOUNT_ID']
+          runtime = os.environ['RUNTIME_SERVICE_ACCOUNT_ID']
+          if (not re.fullmatch(r'[a-z0-9]{20}', upload)
+              or not re.fullmatch(r'[a-z0-9]{20}', runtime)
+              or upload == runtime
+              or upload != config['foundation']['release_service_account_id']):
+              raise SystemExit('Configure separate upload/runtime service accounts; upload must match foundation')
+          PY
+      - name: Authenticate the artifact uploader
+        id: upload_iam
+        uses: yc-actions/yc-iam-token-fed@bee3beba33d7936b3be69a6e57f847bb71f9958f
+        with:
+          yc-sa-id: ${{ vars.YC_RELEASE_SERVICE_ACCOUNT_ID }}
+      - name: Publish verified objects and prepare function versions
+        env:
+          YC_TOKEN: ${{ steps.upload_iam.outputs.token }}
+          YC_IAM_TOKEN: ${{ steps.upload_iam.outputs.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          bucket=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["foundation"]["static_bucket"])' "$RUNNER_TEMP/runtime-config.json")
+          python3 infra/02-release/upload.py --directory dist/site --bucket "$bucket" --execute
+          python3 infra/02-release/prepare_runtime.py --directory dist/site \
+            --config "$RUNNER_TEMP/runtime-config.json" --gate-zip dist/gate.zip \
+            --quote-zip dist/quotes.zip --output "$RUNNER_TEMP/runtime.tfvars.json"
+      - name: Authenticate the runtime Terraform actor
+        id: runtime_iam
+        uses: yc-actions/yc-iam-token-fed@bee3beba33d7936b3be69a6e57f847bb71f9958f
+        with:
+          yc-sa-id: ${{ vars.YC_RUNTIME_SERVICE_ACCOUNT_ID }}
+      - name: Plan and apply runtime with its own identity
+        env:
+          YC_TOKEN: ${{ steps.runtime_iam.outputs.token }}
+          YC_IAM_TOKEN: ${{ steps.runtime_iam.outputs.token }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.TF_RUNTIME_STATE_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_RUNTIME_STATE_SECRET_ACCESS_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          tofu -chdir=infra/02-release init -input=false -lockfile=readonly -backend-config="$RUNNER_TEMP/runtime-backend.hcl"
+          tofu -chdir=infra/02-release plan -input=false \
+            -var-file="$RUNNER_TEMP/runtime.tfvars.json" -out="$RUNNER_TEMP/runtime.tfplan"
+          tofu -chdir=infra/02-release show -json "$RUNNER_TEMP/runtime.tfplan" > "$RUNNER_TEMP/runtime-plan.json"
+          python3 infra/02-release/check_plan.py "$RUNNER_TEMP/runtime-plan.json"
+          tofu -chdir=infra/02-release apply -input=false "$RUNNER_TEMP/runtime.tfplan"
+          tofu -chdir=infra/02-release output -json release_tuple > "$RUNNER_TEMP/release.json"
+      - name: Check anonymous access is closed
+        run: python3 infra/02-release/check_public.py https://labs.spbetu.ru
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: deployed-${{ github.event.workflow_run.head_sha }}
+          path: ${{ runner.temp }}/release.json
+          retention-days: 90
+      - name: Remove temporary credentials and plans
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/runtime-config.json" "$RUNNER_TEMP/runtime-backend.hcl" \
+            "$RUNNER_TEMP/runtime.tfvars.json" "$RUNNER_TEMP/runtime.tfplan" "$RUNNER_TEMP/runtime-plan.json"

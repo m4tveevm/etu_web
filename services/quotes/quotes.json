@@ -1,0 +1,37 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "tokyo-ghoul-s01e12-kaneki-1000-7",
+    "text": "Сколько будет тысяча минус семь?",
+    "language": "ru",
+    "attribution": {
+      "speaker": "Кэн Канеки",
+      "work": "Токийский гуль",
+      "season": 1,
+      "episode": 12,
+      "sourceUrl": "https://www.crunchyroll.com/watch/GK9U34MXN/ghoul"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "prutkov-plody-razdumya-80",
+    "text": "Если хочешь быть счастливым, будь им.",
+    "language": "ru",
+    "attribution": {
+      "speaker": "Козьма Прутков",
+      "work": "Плоды раздумья. Мысли и афоризмы, № 80",
+      "sourceUrl": "https://imwerden.de/pdf/kozma_prutkov_plodi_rasdumia.pdf#page=8"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "pushkin-vakkhicheskaya-pesnya",
+    "text": "Да здравствует солнце, да скроется тьма!",
+    "language": "ru",
+    "attribution": {
+      "speaker": "Александр Пушкин",
+      "work": "Вакхическая песня",
+      "sourceUrl": "https://rvb.ru/pt/pushkin/0382-ru.html"
+    }
+  }
+]
