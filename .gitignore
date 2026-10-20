@@ -2,6 +2,20 @@
 
 # dependencies
 /node_modules
+**/node_modules/
+**/__pycache__/
+**/dist/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+backend.hcl
+foundation.json
+release.json
 /.pnp
 .pnp.js
 

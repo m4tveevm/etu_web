@@ -1,0 +1,13 @@
+{
+  "name": "etu-web-quotes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "package": "python3 package.py"
+  }
+}
