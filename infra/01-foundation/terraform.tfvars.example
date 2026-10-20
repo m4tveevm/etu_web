@@ -3,6 +3,10 @@ cloud_id  = ""
 folder_id = ""
 hostname  = "labs.spbetu.ru"
 
+# Actual owner and foundation operator subject IDs; keep values in private tfvars.
+# Empty or wildcard IDs fail validation. This list does not grant IAM roles.
+bucket_management_principal_ids = []
+
 name_prefix            = "etu-web-prod"
 static_bucket_max_size = 1073741824
 # static_bucket_name is optional; the default combines name_prefix and folder_id.

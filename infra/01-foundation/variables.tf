@@ -62,6 +62,20 @@ variable "static_bucket_max_size" {
   }
 }
 
+variable "bucket_management_principal_ids" {
+  description = "Actual owner and foundation operator subject IDs allowed to manage this bucket. Does not grant IAM roles."
+  type        = set(string)
+  sensitive   = true
+  nullable    = false
+
+  validation {
+    condition = length(var.bucket_management_principal_ids) > 0 && alltrue([
+      for id in var.bucket_management_principal_ids : can(regex("^[a-z0-9]{20}$", id))
+    ])
+    error_message = "Supply at least one actual 20-character owner or foundation operator subject ID; wildcards are not allowed."
+  }
+}
+
 locals {
   bucket_name = coalesce(var.static_bucket_name, "${var.name_prefix}-${var.folder_id}")
   labels = {

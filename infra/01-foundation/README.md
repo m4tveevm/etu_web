@@ -18,7 +18,20 @@
 | `release` | PUT/GET объектов `releases/*`, LIST этого префикса. |
 
 `release` не может удалять объекты, читать Lockbox или управлять IAM.
-Права оператора Terraform задаются отдельно при bootstrap. Container Registry
+На самом бакете `gate` получает `storage.viewer`, а `release` —
+`storage.uploader`. Policy ограничивает эти базовые права указанными операциями
+и префиксом `releases/`; загрузка с заголовками объектного ACL запрещена.
+В [Object Storage](https://yandex.cloud/en/docs/storage/security/overview)
+одной policy недостаточно: сначала проверяются IAM или ACL бакета.
+
+Обязательная переменная `bucket_management_principal_ids` содержит реальные ID
+владельца и оператора foundation. Только для них policy сохраняет управление
+бакетом; роли IAM эта переменная не выдаёт. Значения хранятся в закрытых tfvars
+и передаются CI через environment secret `TF_FOUNDATION_CONFIG` в
+`infrastructure`. Обычная GitHub variable для этого не используется.
+Аккаунты `gate` и `release` в этот
+список включать нельзя. Права оператора задаются отдельно при bootstrap.
+Container Registry
 и Serverless Containers в этой конфигурации не используются.
 
 Бакет имеет versioning, лимит 1 GiB и запрет анонимного чтения, листинга
@@ -78,6 +91,7 @@ State, бинарные планы и локальные backend-файлы не
 tofu -chdir=infra/01-foundation init -backend=false
 tofu -chdir=infra/01-foundation fmt -check
 tofu -chdir=infra/01-foundation validate
+tofu -chdir=infra/01-foundation test
 ```
 
 После bootstrap скопировать `backend.hcl.example` и `terraform.tfvars.example`
@@ -114,3 +128,9 @@ Email и имя не подходят. Пока allowlist пуст, сайт з�
 Локальная validation подтверждает схему конфигурации. Реальные IDs, права,
 сертификат, secret version и состояние облака проверяются отдельным plan
 после bootstrap.
+
+Тесты используют mock provider и проверяют план без облачных запросов.
+Они не заменяют проверку реальных разрешений: перед выпуском нужны успешные
+GET/PUT/LIST внутри `releases/` и отказы для другого префикса, DELETE,
+изменения bucket policy/ACL и загрузки с объектным ACL. Отдельно проверяется
+чтение и обновление конфигурации оператором foundation.

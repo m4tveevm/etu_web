@@ -73,5 +73,6 @@ jobs:
           tofu fmt -check -recursive infra
           tofu -chdir=infra/01-foundation init -backend=false -input=false -lockfile=readonly
           tofu -chdir=infra/01-foundation validate
+          tofu -chdir=infra/01-foundation test
           tofu -chdir=infra/02-release init -backend=false -input=false -lockfile=readonly
           tofu -chdir=infra/02-release validate
