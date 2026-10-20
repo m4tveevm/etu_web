@@ -85,10 +85,12 @@
 
 В \code{media.html} показана реплика Кэна Канеки из «Токийского гуля»: «Сколько будет тысяча минус семь?». Цвет текста зависит от ширины окна: до 480~px он красный, от 481 до 800~px зелёный, свыше 800~px синий. Условия \code{max-width} включают пороговые значения.
 
-Страница \code{index.html} содержит шесть карточек с заметками читательского клуба «Манга после занятий». Сетка состоит из трёх колонок, при ширине до 800~px из двух, до 480~px из одной. Изображение кофе и раскрытой манги помещено в квадратную область. Свойство \code{object-fit: cover} заполняет её с сохранением пропорций.
+Страница \code{assignment.html} повторяет макет с заголовком «Заголовок сайта», исходной иллюстрацией и текстом Lorem ipsum. Сетка состоит из трёх колонок, при ширине до 800~px из двух, до 480~px из одной. Изображение показано из неизменённого снимка с помощью позиционирования и \code{overflow: hidden}.
+
+В \code{index.html} та же сетка содержит заметки клуба «Манга после занятий». Этот вариант дополняет страницу по образцу.
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth,height=150mm,keepaspectratio]{assets/desktop.png}
+\includegraphics[width=\textwidth,height=120mm,keepaspectratio]{assets/assignment-desktop.png}
 \caption{Сетка карточек при ширине окна 1426 px}
 \end{figure}
 
@@ -112,7 +114,7 @@
 При ширине окна 320, 375, 768 и 1440~px горизонтальной прокрутки нет. Между примером смены цвета и карточками можно перейти по ссылкам.
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth,height=100mm,keepaspectratio]{assets/mobile.png}
+\includegraphics[width=\textwidth,height=100mm,keepaspectratio]{assets/assignment-mobile.png}
 \caption{Верхняя часть страницы при ширине окна 375 px}
 \end{figure}
 
@@ -122,14 +124,14 @@
 
 
 \clearpage
-\section{Исходный код: index.html}
-\listing{index.html}
+\section{Исходный код: assignment.html}
+\listing{assignment.html}
 
-\vspace{4mm}
+\clearpage
 \section{Исходный код: style.scss}
 \listing{style.scss}
 
-\clearpage
+\vspace{4mm}
 \section{Исходный код: media.html}
 \listing{media.html}
 

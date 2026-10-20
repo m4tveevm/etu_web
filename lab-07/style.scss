@@ -45,6 +45,19 @@ h1 {
   }
 }
 
+.assignment .illustration {
+  position: relative;
+  aspect-ratio: 321 / 281;
+  img {
+    position: absolute;
+    width: calc(1426 / 321 * 100%);
+    height: auto;
+    max-width: none;
+    left: calc(-168 / 321 * 100%);
+    top: calc(-109 / 281 * 100%);
+  }
+}
+
 footer {
   padding: 24px;
   text-align: center;
