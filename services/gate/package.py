@@ -7,7 +7,7 @@ from pathlib import Path
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parent
-SOURCES = ("app.mjs", "cloud.mjs", "config.mjs", "cookies.mjs", "function.mjs", "http.mjs", "oidc.mjs")
+SOURCES = ("app.mjs", "cloud.mjs", "config.mjs", "cookies.mjs", "function.mjs", "http.mjs", "oidc.mjs", "login.html", "login.css")
 
 
 def build(output):
