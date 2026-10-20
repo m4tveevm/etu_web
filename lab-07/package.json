@@ -1,0 +1,10 @@
+{
+  "name": "etu-web-lab-07",
+  "private": true,
+  "scripts": {
+    "build:css": "sass --style=compressed --no-source-map style.scss:style.css media.scss:media.css"
+  },
+  "devDependencies": {
+    "sass": "1.105.2"
+  }
+}
