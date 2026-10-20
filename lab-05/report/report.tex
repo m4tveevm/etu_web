@@ -26,7 +26,7 @@
 \setlength{\parindent}{1.25cm}
 \setlength{\parskip}{0pt}
 \usepackage{indentfirst}
-\usepackage{array,tabularx,graphicx,float,caption,fvextra}
+\usepackage{array,tabularx,graphicx,float,caption,fvextra,xcolor}
 \DeclareCaptionLabelSeparator{gost}{~—~}
 \captionsetup{font=small,labelsep=gost,justification=centering,singlelinecheck=false}
 \captionsetup[table]{justification=raggedright,position=top,skip=6pt}
@@ -46,7 +46,8 @@
 \raggedbottom
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcommand{\code}[1]{{\fontsize{12}{14}\selectfont\texttt{#1}}}
-\newcommand{\listing}[1]{\begingroup\singlespacing\VerbatimInput[breaklines=true,breakanywhere=true,fontsize=\fontsize{9.5}{11.5}\selectfont,numbers=left,numbersep=6pt,xleftmargin=16pt]{#1}\endgroup}
+\input{build/highlight-style.tex}
+\newcommand{\listing}[1]{\begingroup\singlespacing\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}\input{build/#1.tex}\endgroup}
 
 \begin{document}
 \begin{titlepage}
@@ -80,11 +81,11 @@
 \setcounter{page}{2}
 
 \section{Цель и выполнение работы}
-Цель работы: разделить макет сайта на логические блоки и воспроизвести его каркас средствами HTML и CSS.
+Цель работы: воспроизвести блочную структуру макета средствами HTML и CSS.
 
-Каркас включает верхнюю полосу, шапку с логотипом и навигацией, баннер, две колонки содержимого и нижнюю область с четырьмя блоками. Цветные заливки обозначают границы частей макета.
+В каркасе выделены верхняя полоса, шапка с логотипом и навигацией, баннер, две колонки содержимого и нижняя область из четырёх блоков. Цветные заливки показывают границы блоков.
 
-При ширине окна 1020~px внешний контейнер занимает 980~px и центрируется. Шапка имеет высоту 102~px, баннер 320~px. Для основной области задана минимальная высота 426~px, для нижних блоков 296~px.
+При ширине окна 1020~px контейнер шириной 980~px расположен по центру. Высота шапки составляет 102~px, баннера 320~px. Минимальная высота основной области равна 426~px, нижних блоков 296~px.
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=155mm,keepaspectratio]{assets/desktop.png}
@@ -93,7 +94,7 @@
 
 \clearpage
 \section{Размеры блоков и проверка}
-Для колонок применяется CSS Grid. Ширина колонок основной области составляет 350 и 630~px. Нижняя область разделена на части шириной 350, 200, 200 и 230~px. Внутренние отступы по краям равны 30~px. Все размеры проверены в Chromium 153.
+Колонки размещены с помощью CSS Grid. Внутренние отступы по краям равны 30~px. Размеры блоков проверены в Chromium 153.
 \begin{table}[H]
 \caption{Размеры блоков}
 \begingroup\fontsize{12}{14}\selectfont\singlespacing
@@ -110,25 +111,26 @@
 \endgroup
 \end{table}
 
-При ширине до 600~px колонки основной и нижней областей располагаются вертикально. На ширинах 320, 375, 768 и 1440~px страница не выходит за пределы окна.
+При ширине окна до 600~px колонки основной и нижней областей располагаются вертикально. На ширинах 320, 375, 768 и 1440~px горизонтальной прокрутки нет.
 
-Каркас воспроизводит состав, порядок и пропорции блоков образца. Основной области задана минимальная высота, поэтому добавление содержимого может увеличить её без обрезки текста.
+Минимальная высота основной области позволяет ей увеличиваться по мере добавления текста.
 
 
 \clearpage
 \section{Исходный код: index.html}
-\listing{../index.html}
+\listing{index.html}
 
 \clearpage
-\section{Исходный код: style.css}
-\listing{../style.css}
+\section{Исходный код: style.scss}
+\listing{style.scss}
 \clearpage
 \section*{Список использованных источников}
 \begin{enumerate}[label=\arabic*.,leftmargin=8mm,itemsep=8pt,parsep=0pt]
-\item Тег <header> // HTMLbook.ru. URL: \url{https://htmlbook.ru/html/header} (дата обращения: 20.10.2026).
-\item Тег <footer> // HTMLbook.ru. URL: \url{https://htmlbook.ru/html/footer} (дата обращения: 20.10.2026).
-\item box-sizing // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/box-sizing} (дата обращения: 20.10.2026).
-\item min-height // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/min-height} (дата обращения: 20.10.2026).
-\item Basic concepts of grid layout // MDN Web Docs. URL: \url{https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Basic_concepts} (дата обращения: 20.10.2026).
+\item Тег <header> // HTMLbook.ru. URL: \url{https://htmlbook.ru/html/header}.
+\item Тег <footer> // HTMLbook.ru. URL: \url{https://htmlbook.ru/html/footer}.
+\item box-sizing // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/box-sizing}.
+\item min-height // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/min-height}.
+\item Basic concepts of grid layout // MDN Web Docs. URL: \url{https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Basic_concepts}.
+\item Dart Sass Command-Line Interface // Sass. URL: \url{https://sass-lang.com/documentation/cli/dart-sass/}.
 \end{enumerate}
 \end{document}
