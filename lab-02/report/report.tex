@@ -1,0 +1,118 @@
+% !TeX program = xelatex
+\RequirePackage{fix-cm}
+\documentclass[14pt,a4paper]{extarticle}
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\input{build/font-path.tex}
+\ifdefined\reportFontPath
+  \setmainfont{Times.TTF}[Path=\reportFontPath,BoldFont=Timesbd.TTF,ItalicFont=Timesi.TTF,BoldItalicFont=Timesbi.TTF]
+  \newfontfamily\cyrillicfont{Times.TTF}[Path=\reportFontPath,BoldFont=Timesbd.TTF,ItalicFont=Timesi.TTF,BoldItalicFont=Timesbi.TTF,Script=Default]
+\else
+  \setmainfont{Times New Roman}
+  \newfontfamily\cyrillicfont{Times New Roman}
+\fi
+\setmonofont{FreeMono}
+\newfontfamily\cyrillicfonttt{FreeMono}
+\usepackage{polyglossia}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+\usepackage[left=30mm,right=10mm,top=20mm,bottom=20mm,footskip=10mm]{geometry}
+\usepackage{setspace}
+\makeatletter
+\renewcommand{\normalsize}{\@setfontsize\normalsize{14bp}{16.8bp}}
+\makeatother
+\onehalfspacing
+\AtBeginDocument{\normalsize}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\usepackage{indentfirst}
+\usepackage{array,tabularx,graphicx,float,caption,fvextra}
+\DeclareCaptionLabelSeparator{gost}{~—~}
+\captionsetup{font=small,labelsep=gost,justification=centering,singlelinecheck=false}
+\captionsetup[table]{justification=raggedright,position=top,skip=6pt}
+\captionsetup[figure]{skip=8pt}
+\addto\captionsrussian{\renewcommand{\figurename}{Рисунок}\renewcommand{\tablename}{Таблица}}
+\usepackage{titlesec}
+\titleformat{\section}[block]{\normalfont\bfseries\centering}{\thesection.}{.5em}{\MakeUppercase}
+\titlespacing*{\section}{0pt}{0pt}{18pt}
+\usepackage{enumitem}
+\usepackage{xurl}
+\urlstyle{same}
+\usepackage[hidelinks,unicode,pdfauthor={Матвеев М. А.},pdftitle={Лабораторная работа №2. Работа с таблицами}]{hyperref}
+\pagestyle{plain}
+\emergencystretch=2em
+\clubpenalty=10000
+\widowpenalty=10000
+\raggedbottom
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{{\fontsize{12}{14}\selectfont\texttt{#1}}}
+\newcommand{\listing}[1]{\begingroup\singlespacing\VerbatimInput[breaklines=true,breakanywhere=true,fontsize=\fontsize{9.5}{11.5}\selectfont,numbers=left,numbersep=6pt,xleftmargin=16pt]{#1}\endgroup}
+
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\bfseries
+МИНОБРНАУКИ РОССИИ\\
+Федеральное государственное автономное\\
+образовательное учреждение высшего образования\\
+«Санкт-Петербургский государственный\\
+электротехнический университет «ЛЭТИ»\\
+им. В.И. Ульянова (Ленина)»\\
+Кафедра информационных систем
+\end{center}
+\vspace{30mm}
+\begin{center}
+\textbf{ОТЧЕТ ПО ЛАБОРАТОРНОЙ РАБОТЕ №2}\\[8mm]
+«Работа с таблицами»
+\end{center}
+\vfill
+\noindent\begin{tabularx}{\textwidth}{@{}lXr@{}}
+Студент гр. 4372 & \centering\rule{25mm}{0.3pt} & Матвеев М. А.\\[8mm]
+Преподаватель & \centering\rule{25mm}{0.3pt} & Нечитайленко Р. А.\\
+\end{tabularx}
+\vspace{20mm}
+\begin{center}
+Санкт-Петербург\\
+2026
+\end{center}
+\end{titlepage}
+\setcounter{page}{2}
+
+\section{Цель и выполнение работы}
+Цель работы: создать таблицу с отдельными секциями заголовка, данных и итоговой строки, затем оформить её средствами CSS.
+
+Таблица содержит пять строк и пять столбцов. Первая строка помещена в \code{thead}, три строки с учебными данными находятся в \code{tbody}. Последняя строка относится к \code{tfoot}. Атрибут \code{colspan="5"} объединяет её ячейки для вывода итога «Всего: 3».
+
+Ширина таблицы составляет 500~px. Для объединения соседних границ свойству \code{border-collapse} задано значение \code{collapse}. Ячейки имеют сплошную границу толщиной 1~px цвета \code{\#ccc}, вертикальные отступы 5~px и горизонтальные отступы 10~px.
+
+Фон заголовка задан цветом \code{\#f0f1f4}. Итоговая строка имеет фон \code{\#121212}, белый текст и выравнивание по правому краю.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=100mm,keepaspectratio]{assets/desktop.png}
+\caption{Таблица участников}
+\end{figure}
+
+\clearpage
+\section{Проверка и результат}
+В Chromium 153 проверены структура DOM и вычисленные стили. Браузер подтвердил пять строк, три записи в основной части и объединение пяти ячеек итоговой строки. Фактическая ширина таблицы равна 500~px.
+
+При ширине окна 320 и 375~px таблица сохраняет заданный размер. Горизонтальная прокрутка доступна внутри контейнера таблицы, а ширина самой страницы не увеличивается. Контейнер получает фокус с клавиатуры.
+
+Создана таблица с семантическим разделением заголовка, данных и итога. Все заданные размеры, цвета и отступы подтверждены при проверке в браузере.
+
+\vspace{6mm}
+\section*{Список использованных источников}
+\begin{enumerate}[label=\arabic*.,leftmargin=8mm,itemsep=8pt,parsep=0pt]
+\item border-collapse // MDN Web Docs. URL: \url{https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/border-collapse} (дата обращения: 20.10.2026).
+\item HTML table basics // MDN Web Docs. URL: \url{https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content/HTML_table_basics} (дата обращения: 20.10.2026).
+\end{enumerate}
+
+\clearpage
+\section{Исходный код: index.html}
+\listing{../index.html}
+
+\clearpage
+\section{Исходный код: style.css}
+\listing{../style.css}
+\end{document}

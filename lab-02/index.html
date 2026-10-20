@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Работа с таблицами</title>
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+    <main>
+        <h1>Список участников</h1>
+        <div class="table-scroll" role="region" aria-label="Таблица участников" tabindex="0">
+            <table class="table">
+                <caption>Участники учебного проекта</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">№</th>
+                        <th scope="col">Имя</th>
+                        <th scope="col">E-mail</th>
+                        <th scope="col">Пол</th>
+                        <th scope="col">Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td><td>Анна</td><td>anna@example.com</td>
+                        <td>Ж</td><td><time datetime="2026-10-18">18.10.2026</time></td>
+                    </tr>
+                    <tr>
+                        <td>2</td><td>Иван</td><td>ivan@example.com</td>
+                        <td>М</td><td><time datetime="2026-10-19">19.10.2026</time></td>
+                    </tr>
+                    <tr>
+                        <td>3</td><td>Мария</td><td>maria@example.com</td>
+                        <td>Ж</td><td><time datetime="2026-10-20">20.10.2026</time></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="5">Всего: 3</td></tr>
+                </tfoot>
+            </table>
+        </div>
+    </main>
+</body>
+</html>
