@@ -14,6 +14,7 @@ if [[ -n "${font_dir:-}" ]]; then
 else
     printf '%% Используется системный Times New Roman.\n' > build/font-path.tex
 fi
+python3 highlight.py
 for pass in 1 2; do
     xelatex -interaction=nonstopmode -halt-on-error -file-line-error -output-directory=build report.tex > "build/pass-$pass.log" 2>&1 || {
         tail -n 60 "build/pass-$pass.log" >&2
