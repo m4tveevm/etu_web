@@ -227,6 +227,26 @@ test('anonymous traffic never fetches private data and each authorised request c
   assert.equal(head.headers['content-length'], 12);
 });
 
+test('only authenticated lab HTML can be embedded by its own host', async () => {
+  const { app, calls, sessionCookie } = appFixture();
+  for (const path of ['/view/lab-01/', '/lab-01/']) {
+    const anonymous = await request(app, path);
+    assert.equal(anonymous.status, 401);
+    assert.equal(anonymous.headers['x-frame-options'], 'DENY');
+  }
+  assert.equal(calls.object, 0);
+  const lab = await request(app, '/lab-01/', { headers: { cookie: sessionCookie } });
+  assert.equal(lab.status, 200);
+  assert.equal(lab.headers['x-frame-options'], 'SAMEORIGIN');
+  assert.match(lab.headers['content-security-policy'], /frame-ancestors 'self'/);
+  assert.doesNotMatch(lab.headers['content-security-policy'], /unsafe-inline/);
+  for (const path of ['/view/lab-01/', '/lab-01/report/report.pdf', '/']) {
+    const other = await request(app, path, { headers: { cookie: sessionCookie } });
+    assert.equal(other.headers['x-frame-options'], 'DENY');
+    assert.match(other.headers['content-security-policy'], /frame-ancestors 'none'/);
+  }
+});
+
 test('callback revokes a newly issued token if live UserInfo fails', async () => {
   const { app, c, calls } = appFixture({ userinfo: async () => { throw new Error('identity_disabled'); } });
   const cookie = pair(seal(c, TRANSACTION_COOKIE, { state: 'expected', nonce: 'n', verifier: 'v', returnTo: '/' }, 300));

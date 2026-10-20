@@ -36,6 +36,7 @@ jobs:
             npm run build:css --prefix "$lab"
           done
           lab-01/node_modules/.bin/sass --style=compressed --no-source-map site/catalogue.scss:site/catalogue.css
+          lab-01/node_modules/.bin/sass --style=compressed --no-source-map site/viewer.scss:site/viewer.css
           git diff --exit-code -- '*.css'
       - name: Test services and release integrity
         run: |

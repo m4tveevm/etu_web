@@ -32,16 +32,41 @@ class ReleaseTests(unittest.TestCase):
             (path / '.env').write_text('do not publish')
         (self.root / 'site').mkdir()
         (self.root / 'site/index.html').write_text('<h1>Labs</h1>')
+        (self.root / 'site/viewer.css').write_text('iframe { width: 100%; }')
+        (self.root / 'site/viewer.js').write_text('// Host navigation')
+        for name in ('assignment.html', 'media.html'):
+            (self.root / 'lab-07' / name).write_text('<!doctype html><html><head></head><body>Lab 7</body></html>')
         (self.root / 'services/quotes').mkdir(parents=True)
         (self.root / 'services/quotes/contract.mjs').write_text('export const version = 1;')
+        (self.root / 'site/quote.js').write_text('// Hosted quote integration')
+        self.originals = {path: path.read_bytes() for number in builder.LABS
+                          for path in (self.root / f'lab-{number:02d}').rglob('*') if path.is_file()}
         self.out = self.root / 'dist'
         self.manifest = builder.build(self.root, self.out, 'a' * 40)
 
     def test_only_web_and_pdf_are_published(self):
         names = {entry['path'] for entry in self.manifest['files']}
-        self.assertEqual(len(names), 14)
+        self.assertEqual(len(names), 27)
         self.assertFalse(any(name.endswith(('.tex', '.env')) for name in names))
         upload.verify(self.out)
+
+    def test_host_navigation_preserves_standalone_sources_and_pdf(self):
+        for path, content in self.originals.items():
+            self.assertEqual(path.read_bytes(), content)
+            if path.suffix == '.pdf':
+                self.assertEqual((self.out / path.relative_to(self.root)).read_bytes(), content)
+        first = (self.out / 'view/lab-01/index.html').read_text()
+        self.assertIn('src="/lab-01/index.html"', first)
+        self.assertIn('href="/lab-01/report/report.pdf"', first)
+        self.assertIn('href="/view/lab-02/"', first)
+        self.assertNotIn('href="/view/lab-00/"', first)
+        last = (self.out / 'view/lab-07/index.html').read_text()
+        self.assertIn('src="/lab-07/assignment.html"', last)
+        self.assertIn('href="/view/lab-05/"', last)
+        self.assertNotIn('href="/view/lab-08/"', last)
+        self.assertIn('src="/lab-07/media.html"', (self.out / 'view/lab-07/media.html').read_text())
+        self.assertIn('/quote.js', (self.out / 'lab-07/media.html').read_text())
+        self.assertNotIn('/quote.js', (self.root / 'lab-07/media.html').read_text())
 
     def test_changed_or_extra_file_is_rejected(self):
         (self.out / 'index.html').write_text('changed')
