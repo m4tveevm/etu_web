@@ -179,6 +179,30 @@ test('callback rejects state mismatch, duplicate parameters, errors and alien us
   assert.equal(stranger.calls.object, 0);
 });
 
+test('login assets render without a session but expose no private data or broader public route', async () => {
+  const { app, calls } = appFixture();
+  const page = await request(app, '/');
+  assert.equal(page.status, 401);
+  assert.match(page.text, /href="\/auth\/login\.css"/);
+  assert.match(page.text, /href="\/auth\/login"/);
+  assert.doesNotMatch(page.headers['content-security-policy'], /unsafe-inline/);
+  const css = await request(app, '/auth/login.css');
+  assert.equal(css.status, 200);
+  assert.equal(css.headers['content-type'], 'text/css; charset=utf-8');
+  assert.ok(css.bytes.length > 0);
+  const head = await request(app, '/auth/login.css', { method: 'HEAD' });
+  assert.equal(head.status, 200);
+  assert.equal(head.headers['content-length'], css.bytes.length);
+  assert.equal(head.bytes, undefined);
+  assert.equal((await request(app, '/auth/login.css', { method: 'POST' })).status, 405);
+  for (const path of ['/auth/login.css/extra', '/auth/login.css.map', '/lab-01/style.css', '/lab-02/report/report.pdf', '/api/v1/quote']) {
+    assert.equal((await request(app, path)).status, 401);
+  }
+  assert.equal(calls.object, 0);
+  assert.equal(calls.quote, 0);
+  assert.equal(calls.userinfo, 0);
+});
+
 test('anonymous traffic never fetches private data and each authorised request checks live UserInfo', async () => {
   const { app, calls, sessionCookie } = appFixture();
   assert.equal((await request(app, '/lab-02/report/report.pdf')).status, 401);
