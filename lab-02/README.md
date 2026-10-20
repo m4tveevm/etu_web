@@ -12,15 +12,16 @@ python3 -m http.server 8000
 
 Адрес: <http://localhost:8000/lab-02/>.
 
-Таблица сохраняет ширину 500 px. На узком экране прокручивается её контейнер.
+Таблица имеет ширину 500 px. На узком экране её можно прокручивать внутри контейнера.
 
 ## Отчёт
 
 [PDF](report/report.pdf), [исходник LaTeX](report/report.tex).
 
-Для сборки нужны XeLaTeX, пакеты TeX Live, Times New Roman и FreeMono:
+Для сборки нужны XeLaTeX, пакеты TeX Live, Times New Roman, FreeMono и Python 3 с Pygments:
 
 ```sh
+python3 -m pip install -r lab-02/report/requirements.txt
 bash lab-02/report/build.sh
 ```
 
@@ -32,4 +33,16 @@ FONT_DIR=/path/to/fonts bash lab-02/report/build.sh
 
 ## Проверка
 
-Страница проверена в Chromium 153 на ширинах 320, 375, 768 и 1440 px. Проверены загрузка ресурсов и параметры задания. Снимки результата находятся в `report/assets/`.
+В Chromium 153 проверены структура таблицы, стили и загрузка ресурсов на ширинах 320, 375, 768 и 1440 px. Снимки страницы находятся в `report/assets/`.
+
+## Сборка стилей
+
+Исходники стилей хранятся в `style.scss`. Для изменения оформления установите зависимости и запустите Sass:
+
+```sh
+cd lab-02
+npm ci
+npm run build:css
+```
+
+`style.css` содержит результат минификации. Этот файл подключается к HTML и хранится в репозитории, поэтому готовую страницу можно открыть без Node.js. В отчёте приведены читаемые исходники SCSS с подсветкой синтаксиса.
