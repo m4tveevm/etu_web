@@ -1,0 +1,136 @@
+% !TeX program = xelatex
+\RequirePackage{fix-cm}
+\documentclass[14pt,a4paper]{extarticle}
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\input{build/font-path.tex}
+\ifdefined\reportFontPath
+  \setmainfont{Times.TTF}[Path=\reportFontPath,BoldFont=Timesbd.TTF,ItalicFont=Timesi.TTF,BoldItalicFont=Timesbi.TTF]
+  \newfontfamily\cyrillicfont{Times.TTF}[Path=\reportFontPath,BoldFont=Timesbd.TTF,ItalicFont=Timesi.TTF,BoldItalicFont=Timesbi.TTF,Script=Default]
+\else
+  \setmainfont{Times New Roman}
+  \newfontfamily\cyrillicfont{Times New Roman}
+\fi
+\setmonofont{FreeMono}
+\newfontfamily\cyrillicfonttt{FreeMono}
+\usepackage{polyglossia}
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+\usepackage[left=30mm,right=10mm,top=20mm,bottom=20mm,footskip=10mm]{geometry}
+\usepackage{setspace}
+\makeatletter
+\renewcommand{\normalsize}{\@setfontsize\normalsize{14bp}{16.8bp}}
+\makeatother
+\onehalfspacing
+\AtBeginDocument{\normalsize}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\usepackage{indentfirst}
+\usepackage{array,tabularx,graphicx,float,caption,fvextra,xcolor}
+\DeclareCaptionLabelSeparator{gost}{~—~}
+\captionsetup{font=small,labelsep=gost,justification=centering,singlelinecheck=false}
+\captionsetup[table]{justification=raggedright,position=top,skip=6pt}
+\captionsetup[figure]{skip=8pt}
+\addto\captionsrussian{\renewcommand{\figurename}{Рисунок}\renewcommand{\tablename}{Таблица}}
+\usepackage{titlesec}
+\titleformat{\section}[block]{\normalfont\bfseries\centering}{\thesection.}{.5em}{\MakeUppercase}
+\titlespacing*{\section}{0pt}{0pt}{18pt}
+\usepackage{enumitem}
+\usepackage{xurl}
+\urlstyle{same}
+\usepackage[hidelinks,unicode,pdfauthor={Матвеев М. А.},pdftitle={Лабораторная работа №3. Относительное и абсолютное позиционирование}]{hyperref}
+\pagestyle{plain}
+\emergencystretch=2em
+\clubpenalty=10000
+\widowpenalty=10000
+\raggedbottom
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{{\fontsize{12}{14}\selectfont\texttt{#1}}}
+\input{build/highlight-style.tex}
+\newcommand{\listing}[1]{\begingroup\singlespacing\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}\input{build/#1.tex}\endgroup}
+
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\bfseries
+МИНОБРНАУКИ РОССИИ\\
+Федеральное государственное автономное\\
+образовательное учреждение высшего образования\\
+«Санкт-Петербургский государственный\\
+электротехнический университет «ЛЭТИ»\\
+им. В.И. Ульянова (Ленина)»\\
+Кафедра информационных систем
+\end{center}
+\vspace{30mm}
+\begin{center}
+\textbf{ОТЧЕТ ПО ЛАБОРАТОРНОЙ РАБОТЕ №3}\\[8mm]
+«Относительное и абсолютное позиционирование»
+\end{center}
+\vfill
+\noindent\begin{tabularx}{\textwidth}{@{}lXr@{}}
+Студент гр. 4372 & \centering\rule{25mm}{0.3pt} & Матвеев М. А.\\[8mm]
+Преподаватель & \centering\rule{25mm}{0.3pt} & Нечитайленко Р. А.\\
+\end{tabularx}
+\vspace{20mm}
+\begin{center}
+Санкт-Петербург\\
+2026
+\end{center}
+\end{titlepage}
+\setcounter{page}{2}
+
+\section{Цель и выполнение работы}
+Цель работы: воспроизвести космическую композицию с помощью относительного и абсолютного позиционирования, задать порядок наложения изображений через \code{z-index}.
+
+Для контейнера \code{composition} заданы размер 600×400~px и \code{position: relative}. Фон подключён в CSS. Семь изображений \code{img} имеют абсолютное позиционирование, их координаты отсчитываются от контейнера.
+
+Большая жёлтая планета перекрывает часть синей планеты и ракеты, а летающая тарелка расположена перед ней. Свойство \code{overflow: hidden} скрывает части изображений за границами композиции.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=125mm,keepaspectratio]{assets/desktop.png}
+\caption{Композиция размером 600×400 px}
+\end{figure}
+
+\clearpage
+\section{Координаты и проверка}
+\begin{table}[H]
+\caption{Положение объектов композиции}
+\begingroup\fontsize{12}{14}\selectfont\singlespacing
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|}
+\hline
+Объект & Положение, px & Слой\\ \hline
+Бирюзовая планета & left: 180, top: 20 & 1\\ \hline
+Синяя планета & left: 50, top: 65 & 2\\ \hline
+Ракета & left: 140, top: 155 & 3\\ \hline
+Жёлтая планета & left: 145, top: 140 & 4\\ \hline
+Летающая тарелка & left: 115, top: 295 & 5\\ \hline
+Астероид & left: 425, top: 80 & 2\\ \hline
+Супергерой & right: 35, bottom: −1 & 6\\ \hline
+\end{tabularx}
+\endgroup
+\end{table}
+
+В Chromium 153 все семь изображений загрузились и заняли заданные позиции. В области пересечения ракеты и жёлтой планеты планета отображается сверху.
+
+На узком экране композиция сохраняет размер 600×400~px и прокручивается внутри контейнера. Координаты и порядок наложения объектов остаются прежними.
+
+
+\clearpage
+\section{Исходный код: index.html}
+\listing{index.html}
+
+\clearpage
+\section{Исходный код: style.scss}
+\listing{style.scss}
+\clearpage
+\section*{Список использованных источников}
+\begin{enumerate}[label=\arabic*.,leftmargin=8mm,itemsep=8pt,parsep=0pt]
+\item position // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/position}.
+\item z-index // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/z-index}.
+\item overflow // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/overflow}.
+\item background // HTMLbook.ru. URL: \url{https://htmlbook.ru/css/background}.
+\item Dart Sass Command-Line Interface // Sass. URL: \url{https://sass-lang.com/documentation/cli/dart-sass/}.
+\end{enumerate}
+\end{document}
