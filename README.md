@@ -21,15 +21,17 @@ python3 -m http.server 8000
 ## Структура работы
 
 - `lab-01/index.html`: заголовки, абзацы и список из трёх пунктов.
-- `lab-01/style.css`: стили текста и отступы.
+- `lab-01/style.scss`: исходные стили текста и отступы.
+- `lab-01/style.css`: скомпилированные и минифицированные стили.
 - `lab-01/report/report.tex`: исходник отчёта в LaTeX.
 - `lab-01/report/assets/`: снимки страницы в браузере.
 
 ## Сборка отчёта
 
-Нужны XeLaTeX, пакеты из TeX Live, Times New Roman для текста и FreeMono для листингов. Если шрифты установлены в системе:
+Нужны XeLaTeX, пакеты из TeX Live, Times New Roman для текста, FreeMono для листингов и Python 3 с Pygments. Если шрифты установлены в системе:
 
 ```sh
+python3 -m pip install -r lab-01/report/requirements.txt
 bash lab-01/report/build.sh
 ```
 
@@ -39,4 +41,16 @@ bash lab-01/report/build.sh
 FONT_DIR=/path/to/fonts bash lab-01/report/build.sh
 ```
 
-Каждая лабораторная оформляется отдельной веткой и коммитом. Pull request направляется в `main`.
+Каждая лабораторная оформляется отдельной веткой. Pull request направляется в `main`.
+
+## Сборка стилей
+
+Исходники стилей хранятся в `style.scss`. Для изменения оформления установите зависимости и запустите Sass:
+
+```sh
+cd lab-01
+npm ci
+npm run build:css
+```
+
+`style.css` содержит результат минификации. Этот файл подключается к HTML и хранится в репозитории, поэтому готовую страницу можно открыть без Node.js. В отчёте приведены читаемые исходники SCSS с подсветкой синтаксиса.
