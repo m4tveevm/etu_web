@@ -38,7 +38,7 @@ jobs:
           YC_TOKEN: ${{ steps.iam.outputs.token }}
           AWS_ACCESS_KEY_ID: ${{ secrets.TF_FOUNDATION_STATE_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_FOUNDATION_STATE_SECRET_ACCESS_KEY }}
-          FOUNDATION_CONFIG: ${{ vars.TF_FOUNDATION_CONFIG }}
+          FOUNDATION_CONFIG: ${{ secrets.TF_FOUNDATION_CONFIG }}
           FOUNDATION_BACKEND: ${{ vars.TF_FOUNDATION_BACKEND_CONFIG }}
         run: |
           set -eu
