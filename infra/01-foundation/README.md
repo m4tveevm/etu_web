@@ -55,8 +55,10 @@ Certificate Manager также имеют собственную защиту о
    issuer `https://token.actions.githubusercontent.com`, JWKS
    `https://token.actions.githubusercontent.com/.well-known/jwks`, audience
    `https://github.com/m4tveevm`. Проверить audience фактически используемого action.
-   Привязать subject `repo:m4tveevm/etu_web:environment:infrastructure` к оператору,
-   а `repo:m4tveevm/etu_web:environment:production` к upload-аккаунту.
+   Привязать subject `repo:m4tveevm@43579963/etu_web@1427391869:environment:infrastructure` к оператору,
+   а `repo:m4tveevm@43579963/etu_web@1427391869:environment:production` к upload-аккаунту.
+   Постоянные ID входят в subject этого репозитория; проверить `sub_claim_prefix`
+   через GitHub API `repos/m4tveevm/etu_web/actions/oidc/customization/sub`.
    Для runtime Terraform завести отдельный аккаунт
    `YC_RUNTIME_SERVICE_ACCOUNT_ID` в защищённом environment `production`.
    Выдать ему административные роли только на новые функции и Gateway,
@@ -77,8 +79,8 @@ Certificate Manager также имеют собственную защиту о
 
 Основание выбора: [OpenTofu 1.13 S3 backend](https://opentofu.org/docs/v1.13/language/settings/backends/s3/)
 описывает lock через conditional PUT, а [YC PutObject](https://yandex.cloud/en/docs/storage/s3/api-ref/object/upload)
-поддерживает `If-None-Match: *`. Совместная работа в нашем бакете ещё не проверена;
-это задача cloud smoke, а не результат локального validate. YDB для lock не создаётся.
+поддерживает `If-None-Match: *`. В выделенном бакете проверены конкуренция двух
+процессов, освобождение lock и повторное получение после прерывания. YDB для lock не создаётся.
 State, бинарные планы и локальные backend-файлы не публикуются как artifacts.
 Конфигурация не генерирует ключи сервисных аккаунтов и не читает secret payload.
 

@@ -1,7 +1,11 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { allowed } from './config.mjs';
 import { seal, open, clearCookie, SESSION_COOKIE, TRANSACTION_COOKIE } from './cookies.mjs';
 import { requestPath } from './cloud.mjs';
+
+const LOGIN_PAGE = readFileSync(new URL('./login.html', import.meta.url));
+const LOGIN_CSS = readFileSync(new URL('./login.css', import.meta.url));
 
 const SECURITY_HEADERS = {
   'cache-control': 'private, no-store, max-age=0',
@@ -34,6 +38,11 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
       if (!config || config.allowlist.length === 0) return reply(503, 'Доступ ещё не настроен.');
       if (!['GET', 'HEAD', 'POST'].includes(req.method)) return reply(405, 'Метод не поддерживается.');
       const cookies = req.headers.cookie;
+
+      if (url.pathname === '/auth/login.css') {
+        if (!['GET', 'HEAD'].includes(req.method)) return reply(405, 'Метод не поддерживается.');
+        return reply(200, LOGIN_CSS, { 'content-type': 'text/css; charset=utf-8' });
+      }
 
       if (url.pathname === '/auth/login') {
         if (req.method !== 'GET') return reply(405, 'Метод не поддерживается.');
@@ -97,7 +106,7 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
       if (req.method !== 'GET' && req.method !== 'HEAD') return reply(405, 'Метод не поддерживается.');
       const session = open(config, SESSION_COOKIE, cookies);
       if (!session || !allowed(config, session.issuer, session.sub)) {
-        return reply(401, '<!doctype html><html lang="ru"><meta charset="utf-8"><title>Вход</title><h1>Лабораторные работы</h1><p>Для просмотра нужен доступ.</p><a href="/auth/login">Войти через UpdSpace ID</a></html>',
+        return reply(401, LOGIN_PAGE,
           { 'content-type': 'text/html; charset=utf-8', 'set-cookie': [clearCookie(SESSION_COOKIE)] });
       }
       // Deliberately no UserInfo cache: revocation and disabled users apply to every file/API request.
@@ -113,7 +122,12 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
       if (!path || path.startsWith('auth/') || path.startsWith('api/')) return reply(404, 'Страница не найдена.');
       const object = await cloud.object(path);
       if (!object) return reply(404, 'Страница не найдена.');
-      return reply(200, object.bytes, { 'content-type': object.contentType });
+      const frameHeaders = /^lab-\d{2}\/[^/]+\.html$/.test(path)
+        && object.contentType.startsWith('text/html')
+        ? { 'x-frame-options': 'SAMEORIGIN', 'content-security-policy':
+          SECURITY_HEADERS['content-security-policy'].replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+        : {};
+      return reply(200, object.bytes, { 'content-type': object.contentType, ...frameHeaders });
     } catch {
       audit('request_failed');
       return reply(503, 'Сервис временно недоступен.', transactionCleared

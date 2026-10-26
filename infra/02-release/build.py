@@ -2,6 +2,7 @@
 """Build an allowlisted static release. No cloud credentials are needed."""
 import argparse
 import hashlib
+from html import escape
 import json
 import mimetypes
 from html.parser import HTMLParser
@@ -11,10 +12,73 @@ from urllib.parse import urljoin, urlsplit, unquote
 
 ROOT = Path(__file__).resolve().parents[2]
 LABS = (1, 2, 3, 4, 5, 7)
+TITLES = {1: 'Оформление текста', 2: 'Таблицы', 3: 'Позиционирование',
+          4: 'Формы', 5: 'Каркас страницы', 7: 'Адаптивная вёрстка'}
 # Leaves room below Gateway's 2.5 MB body limit and the function's 3.5 MB
 # JSON limit after base64 encoding binary files.
 MAX_FILE_BYTES = 2_200_000
 WEB_EXTENSIONS = {'.html', '.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.webp', '.ico'}
+
+
+def viewers():
+    """The host owns navigation; lab documents remain independent inputs."""
+    for index, number in enumerate(LABS):
+        lab = f'lab-{number:02d}'
+        pages = {'index.html': ('index.html', 'Основная страница')}
+        if number == 7:
+            pages = {'assignment.html': ('index.html', 'Макет задания'),
+                     'index.html': ('club.html', 'Клубные заметки'),
+                     'media.html': ('media.html', 'Цитата и медиазапросы')}
+        routes = {f'/{lab}/{source}': f'/view/{lab}/{view}' for source, (view, _) in pages.items()}
+        routes[f'/{lab}/'] = routes[f'/{lab}/index.html']
+        for source, (view, page_title) in pages.items():
+            def neighbour(offset, label, css):
+                pos = index + offset
+                if not 0 <= pos < len(LABS):
+                    return f'<span class="{css}"></span>'
+                target = LABS[pos]
+                return (f'<a class="{css}" href="/view/lab-{target:02d}/">'
+                        f'{label}<span>ЛР{target} · {escape(TITLES[target])}</span></a>')
+            tabs = ''
+            if len(pages) > 1:
+                links = [f'<a href="{routes[f"/{lab}/{item}"]}"'
+                         + (' aria-current="page"' if item == source else '')
+                         + f'>{escape(title)}</a>' for item, (_, title) in pages.items()]
+                tabs = '<nav class="viewer-pages" aria-label="Страницы работы">' + ''.join(links) + '</nav>'
+            html = f'''<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ЛР{number} · {escape(TITLES[number])}</title>
+  <link rel="stylesheet" href="/viewer.css">
+  <script src="/viewer.js" defer></script>
+</head>
+<body class="lab-viewer">
+  <header class="viewer-header">
+    <a class="viewer-back" href="/">← Все работы</a>
+    <div class="viewer-heading"><small>Лабораторная работа {number}</small><h1>{escape(TITLES[number])}</h1></div>
+    <nav class="viewer-actions" aria-label="Материалы работы">
+      <a href="/{lab}/report/report.pdf" target="_blank" rel="noopener">Отчёт PDF ↗</a>
+      <a href="/{lab}/{source}" target="_blank" rel="noopener">Открыть отдельно ↗</a>
+    </nav>
+  </header>
+  {tabs}
+  <main id="viewer-main">
+    <p id="viewer-status" role="status">Загрузка работы…</p>
+    <noscript><p>Для просмотра без JavaScript <a href="/{lab}/{source}">откройте работу отдельно</a>.</p></noscript>
+    <iframe id="lab-frame" src="/{lab}/{source}" title="ЛР{number}: {escape(page_title)}"
+      data-pages="{escape(json.dumps(routes, ensure_ascii=False), quote=True)}"></iframe>
+  </main>
+  <footer class="viewer-footer"><nav aria-label="Переходы между работами">
+    {neighbour(-1, '← Предыдущая', 'viewer-previous')}
+    <a class="viewer-catalogue" href="/">К списку работ</a>
+    {neighbour(1, 'Следующая →', 'viewer-next')}
+  </nav></footer>
+</body>
+</html>
+'''
+            yield f'view/{lab}/{view}', html.encode()
 
 
 def sources(root):
@@ -79,17 +143,10 @@ def build(root, output, release_id):
         raise ValueError('Output must not exist; use a fresh directory')
     entries = []
     names = set()
-    for source, name in sources(root):
-        if source.is_symlink() or not source.resolve().is_relative_to(root.resolve()):
-            raise ValueError(f'Symlink/outside source: {name}')
+    def add(name, data):
         if name in names:
             raise ValueError(f'Duplicate path: {name}')
         names.add(name)
-        data = source.read_bytes()
-        if name == 'lab-07/index.html':
-            data = data.replace(b'assets/reading-night.png', b'/media/reading-night.webp')
-        if name == 'lab-07/media.html':
-            data = data.replace(b'</head>', b'    <script src="/quote.js" type="module"></script>\n  </head>')
         if len(data) > MAX_FILE_BYTES:
             raise ValueError(f'File exceeds gateway budget: {name}')
         destination = output / name
@@ -102,6 +159,18 @@ def build(root, output, release_id):
             content_type += '; charset=utf-8'
         entries.append({'path': name, 'sha256': hashlib.sha256(data).hexdigest(),
                         'size': len(data), 'contentType': content_type})
+
+    for source, name in sources(root):
+        if source.is_symlink() or not source.resolve().is_relative_to(root.resolve()):
+            raise ValueError(f'Symlink/outside source: {name}')
+        data = source.read_bytes()
+        if name == 'lab-07/index.html':
+            data = data.replace(b'assets/reading-night.png', b'/media/reading-night.webp')
+        if name == 'lab-07/media.html':
+            data = data.replace(b'</head>', b'    <script src="/quote.js" type="module"></script>\n  </head>')
+        add(name, data)
+    for name, data in viewers():
+        add(name, data)
     if 'index.html' not in names:
         raise ValueError('Missing site catalogue')
     check_links(output)
