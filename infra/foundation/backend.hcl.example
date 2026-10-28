@@ -15,4 +15,4 @@ use_lockfile                = true
 
 # Credentials belong to the runner environment, never to this file.
 # Native S3 locking requires a two-process cloud smoke test before enabling CI.
-# See the foundation README. Never disable locking to bypass a failed test.
+# Never disable locking to bypass a failed test.

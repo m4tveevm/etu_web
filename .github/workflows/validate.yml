@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for lab in lab-01 lab-02 lab-03 lab-04 lab-05 lab-07; do
+          for lab in lab-*/; do
             npm ci --ignore-scripts --prefix "$lab"
             npm run build:css --prefix "$lab"
           done
@@ -43,13 +43,13 @@ jobs:
           npm ci --ignore-scripts --prefix services/gate
           npm test --prefix services/gate
           npm test --prefix services/quotes
-          python3 -m unittest discover -s infra/02-release -p 'test_*.py' -v
+          python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Build exact commit artifact
         env:
           RELEASE_SHA: ${{ github.sha }}
         run: |
-          python3 infra/02-release/build.py --release-id "$RELEASE_SHA" --output dist/site
-          python3 infra/02-release/upload.py --directory dist/site
+          python3 scripts/build.py --release-id "$RELEASE_SHA" --output dist/site
+          python3 scripts/upload.py --directory dist/site
           python3 services/quotes/package.py
           python3 services/gate/package.py
           cp services/quotes/dist/quotes.zip dist/quotes.zip
@@ -72,8 +72,8 @@ jobs:
           tofu_wrapper: false
       - run: |
           tofu fmt -check -recursive infra
-          tofu -chdir=infra/01-foundation init -backend=false -input=false -lockfile=readonly
-          tofu -chdir=infra/01-foundation validate
-          tofu -chdir=infra/01-foundation test
-          tofu -chdir=infra/02-release init -backend=false -input=false -lockfile=readonly
-          tofu -chdir=infra/02-release validate
+          tofu -chdir=infra/foundation init -backend=false -input=false -lockfile=readonly
+          tofu -chdir=infra/foundation validate
+          tofu -chdir=infra/foundation test
+          tofu -chdir=infra/runtime init -backend=false -input=false -lockfile=readonly
+          tofu -chdir=infra/runtime validate

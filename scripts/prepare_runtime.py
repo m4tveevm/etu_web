@@ -23,8 +23,8 @@ if __name__ == '__main__':
     manifest, digest = upload.verify(args.directory)
     config = json.loads(args.config.read_text())
     required = {'foundation', 'gate_secret_version_id', 'oidc_client_id', 'allowed_subjects'}
-    if set(config) != required or not config['allowed_subjects']:
-        parser.error('Runtime config must contain foundation, secret version ID, client ID and a non-empty subject allowlist')
+    if not isinstance(config, dict) or set(config) != required or not isinstance(config['allowed_subjects'], list):
+        parser.error('Runtime config must contain foundation, secret version ID, client ID and a subject allowlist')
     result = {**config, 'release_id': manifest['releaseId'], 'release_manifest_sha256': digest,
               'gate_zip_path': str(args.gate_zip.resolve()),
               'gate_zip_sha256': hashlib.sha256(args.gate_zip.read_bytes()).hexdigest(),

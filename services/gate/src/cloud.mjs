@@ -29,6 +29,7 @@ export function createCloud(config, fetcher = fetch) {
   let tokenUntil = 0;
   let manifest;
   let manifestLoading;
+  let manifestQuoteAccess;
 
   async function iamToken() {
     if (iam && Date.now() < tokenUntil) return iam;
@@ -60,18 +61,24 @@ export function createCloud(config, fetcher = fetch) {
       const bytes = await privateGet(objectUrl('manifest.json'), 512_000);
       if (digest(bytes) !== config.manifestSha256) throw new Error('manifest_digest');
       const data = JSON.parse(bytes.toString('utf8'));
-      if (data.schemaVersion !== 1 || data.releaseId !== config.releaseId || !Array.isArray(data.files)
+      if (data.schemaVersion !== 2 || data.releaseId !== config.releaseId || !Array.isArray(data.files)
+        || !['public', 'admin', null].includes(data.quoteAccess)
         || data.files.length < 1 || data.files.length > 5000) throw new Error('manifest_schema');
       const entries = new Map();
       for (const item of data.files) {
         if (!safePath(item.path) || entries.has(item.path) || item.path === 'manifest.json'
+          || !['public', 'admin'].includes(item.access)
           || !/^[a-f0-9]{64}$/.test(item.sha256 || '') || !Number.isSafeInteger(item.size)
           || item.size < 0 || item.size > MAX_FILE_BYTES || typeof item.contentType !== 'string'
           || !TYPES.has(item.contentType.split(';')[0])
           || !/^[a-zA-Z0-9/+.-]+(?:; charset=utf-8)?$/.test(item.contentType)) throw new Error('manifest_entry');
         entries.set(item.path, item);
       }
-      if (!entries.has('index.html')) throw new Error('manifest_index');
+      if (entries.get('index.html')?.access !== 'public'
+        || entries.get('admin/index.html')?.access !== 'admin') {
+        throw new Error('manifest_index');
+      }
+      manifestQuoteAccess = data.quoteAccess;
       manifest = entries;
       return entries;
     })();
@@ -87,6 +94,15 @@ export function createCloud(config, fetcher = fetch) {
     return { bytes, contentType: item.contentType };
   }
 
+  async function access(path) {
+    return (await loadManifest()).get(path)?.access ?? null;
+  }
+
+  async function quoteAccess() {
+    await loadManifest();
+    return manifestQuoteAccess;
+  }
+
   async function quote() {
     if (!config.quoteUrl) throw new Error('quote_unconfigured');
     const value = JSON.parse((await privateGet(config.quoteUrl, 16_384)).toString('utf8'));
@@ -94,5 +110,5 @@ export function createCloud(config, fetcher = fetch) {
     return value;
   }
 
-  return { object, quote, loadManifest };
+  return { object, quote, access, quoteAccess, loadManifest };
 }

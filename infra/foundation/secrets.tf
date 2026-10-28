@@ -17,4 +17,4 @@ resource "yandex_lockbox_secret_iam_member" "gate_payload" {
 }
 
 # No secret_version, password_payload_specification, random_password or secret data source.
-# 02-release receives an explicit Lockbox version ID; it never reads the payload.
+# Runtime receives an explicit Lockbox version ID; it never reads the payload.
