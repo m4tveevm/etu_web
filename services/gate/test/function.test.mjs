@@ -25,16 +25,25 @@ const pair = (cookie) => cookie.split(';')[0];
 function fixture(bytes = Buffer.from('private'), contentType = 'text/html') {
   const c = config();
   const calls = { exchange: 0, userinfo: 0, object: 0, revoke: 0 };
+  const objectPaths = [];
   const oidc = {
     metadata: async () => ({ authorization_endpoint: `${issuer}/oauth/authorize` }),
     exchange: async () => { calls.exchange++; return { issuer, sub: 'owner', accessToken: 'test-token', ttl: 300 }; },
     userinfo: async () => { calls.userinfo++; },
     revoke: async () => { calls.revoke++; },
   };
-  const run = createFunctionHandler(createApp({ config: c, oidc,
-    cloud: { object: async () => { calls.object++; return { bytes, contentType }; } } }));
+  const policies = new Map([
+    ['index.html', 'public'], ['admin/index.html', 'admin'],
+    ['lab-01/index.html', 'public'], ['lab-01/report/report.pdf', 'public'],
+    ['lab-07/assets/file', 'public'], ['lab-02/report/report.pdf', 'admin'],
+  ]);
+  const run = createFunctionHandler(createApp({ config: c, oidc, cloud: {
+    access: async (path) => policies.get(path) ?? null,
+    quoteAccess: async () => 'public',
+    object: async (path) => { calls.object++; objectPaths.push(path); return { bytes, contentType }; },
+  } }));
   const cookie = pair(seal(c, SESSION_COOKIE, { issuer, sub: 'owner', accessToken: 'test-token' }, 300));
-  return { run, c, cookie, calls };
+  return { run, c, cookie, calls, objectPaths };
 }
 
 test('function adapter uses v1 actual path and preserves multi-value query/header data', () => {
@@ -85,10 +94,18 @@ test('function adapter callback returns two separate Set-Cookie headers and reje
 });
 
 test('function cookies and Origin use real event headers, never a client context header', async () => {
-  const { run, cookie, calls } = fixture();
+  const { run, cookie, calls, objectPaths } = fixture();
   const spoof = Buffer.from(JSON.stringify({ gateTransport: 'v1', cookie, origin })).toString('base64');
-  assert.equal((await run(event('/', { headers: { 'X-Yc-ApiGateway-Operation-Context': spoof } }))).statusCode, 401);
-  assert.equal((await run(event('/', { multiValueHeaders: { Cookie: [cookie, cookie] } }))).statusCode, 401);
+  assert.equal((await run(event('/admin/', { headers: { 'X-Yc-ApiGateway-Operation-Context': spoof } }))).statusCode, 401);
+  assert.equal((await run(event('/admin/', { multiValueHeaders: { Cookie: [cookie, cookie] } }))).statusCode, 401);
+  assert.equal(calls.object, 0);
+  assert.equal(calls.userinfo, 0);
+  assert.equal((await run(event('/', { headers: { 'X-Yc-ApiGateway-Operation-Context': spoof } }))).statusCode, 200);
+  const publicFallback = await run(event('/', { multiValueHeaders: { Cookie: [cookie, cookie] } }));
+  assert.equal(publicFallback.statusCode, 200);
+  assert.match(publicFallback.multiValueHeaders['set-cookie'][0], /Max-Age=0$/);
+  assert.deepEqual(objectPaths, ['index.html', 'index.html']);
+  assert.equal(calls.userinfo, 0);
   const denied = await run(event('/auth/logout', { httpMethod: 'POST', headers: { Cookie: cookie,
     Origin: 'https://evil.invalid', 'X-Yc-ApiGateway-Operation-Context': spoof } }));
   assert.equal(denied.statusCode, 403);
@@ -105,8 +122,8 @@ test('function adapter transports exact PDF, WebP and UTF-8 bytes within cloud l
     ['image/webp', randomBytes(MAX_FILE_BYTES)],
     ['text/html; charset=utf-8', Buffer.from('<h1>Лабораторные работы</h1>')],
   ]) {
-    const { run, cookie } = fixture(bytes, contentType);
-    const result = await run(event('/lab-07/assets/file', { headers: { Cookie: cookie } }));
+    const { run, calls } = fixture(bytes, contentType);
+    const result = await run(event('/lab-07/assets/file'));
     assert.equal(result.statusCode, 200);
     assert.equal(result.headers['content-type'], contentType);
     assert.equal(result.headers['content-length'], String(bytes.length));
@@ -114,6 +131,7 @@ test('function adapter transports exact PDF, WebP and UTF-8 bytes within cloud l
     assert.deepEqual(Buffer.from(result.body, 'base64'), bytes);
     assert.ok(Buffer.byteLength(JSON.stringify(result)) < 3_400_000);
     assert.ok(bytes.length + Buffer.byteLength(JSON.stringify(result.headers)) < 2_500_000);
+    assert.equal(calls.userinfo, 0);
   }
 });
 
@@ -127,6 +145,13 @@ test('function adapter HEAD keeps object headers without a body; quote remains G
   assert.equal(result.isBase64Encoded, false);
   assert.equal(calls.userinfo, 1);
   assert.equal(calls.object, 1);
+  const publicPdf = await run(event('/lab-01/report/report.pdf', { httpMethod: 'HEAD' }));
+  assert.equal(publicPdf.statusCode, 200);
+  assert.equal(publicPdf.headers['content-length'], String(bytes.length));
+  assert.equal(publicPdf.body, '');
+  assert.equal(publicPdf.isBase64Encoded, false);
+  assert.equal(calls.userinfo, 1);
+  assert.equal(calls.object, 2);
   const quote = await run(event('/api/v1/quote', { httpMethod: 'HEAD', headers: { Cookie: cookie } }));
   assert.equal(quote.statusCode, 405);
   assert.equal(quote.headers.allow, 'GET');

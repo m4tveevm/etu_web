@@ -1,5 +1,5 @@
 variable "foundation" {
-  description = "Actual release_config output from stage 01, with no secret values."
+  description = "The foundation release_config output, with no secret values."
   type = object({
     cloud_id                   = string
     folder_id                  = string
@@ -21,7 +21,7 @@ variable "foundation" {
       var.foundation.quote_service_account_id, var.foundation.release_service_account_id,
       var.foundation.gate_secret_id, var.foundation.certificate_id
     ] : can(regex("^[a-z0-9]{20}$", id))])
-    error_message = "Export real resource IDs from stage 01; empty or placeholder IDs are invalid."
+    error_message = "Export real resource IDs from foundation; empty or placeholder IDs are invalid."
   }
 
   validation {

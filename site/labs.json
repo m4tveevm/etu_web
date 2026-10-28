@@ -1,0 +1,55 @@
+[
+  {
+    "id": "lab-01",
+    "title": "Оформление текста",
+    "access": "public",
+    "enabled": true
+  },
+  {
+    "id": "lab-02",
+    "title": "Таблицы",
+    "access": "public",
+    "enabled": true
+  },
+  {
+    "id": "lab-03",
+    "title": "Позиционирование",
+    "access": "public",
+    "enabled": true
+  },
+  {
+    "id": "lab-04",
+    "title": "Формы",
+    "access": "public",
+    "enabled": true
+  },
+  {
+    "id": "lab-05",
+    "title": "Каркас страницы",
+    "access": "public",
+    "enabled": true
+  },
+  {
+    "id": "lab-07",
+    "title": "Адаптивная вёрстка",
+    "access": "public",
+    "enabled": true,
+    "pages": [
+      {
+        "source": "assignment.html",
+        "path": "index.html",
+        "title": "Макет задания"
+      },
+      {
+        "source": "index.html",
+        "path": "club.html",
+        "title": "Клубные заметки"
+      },
+      {
+        "source": "media.html",
+        "path": "media.html",
+        "title": "Цитата и медиазапросы"
+      }
+    ]
+  }
+]

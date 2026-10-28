@@ -44,7 +44,7 @@ output "certificate_dns_challenges" {
 }
 
 output "release_config" {
-  description = "Non-secret inputs for stage 02; export this instead of sharing foundation state."
+  description = "Non-secret inputs for runtime; export this instead of sharing foundation state."
   value = {
     cloud_id                   = var.cloud_id
     folder_id                  = var.folder_id

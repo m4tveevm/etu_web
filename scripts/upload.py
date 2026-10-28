@@ -12,21 +12,49 @@ import subprocess
 def verify(directory):
     raw = (directory / 'manifest.json').read_bytes()
     manifest = json.loads(raw)
-    if manifest.get('schemaVersion') != 1 or not re.fullmatch(r'[0-9a-f]{40}', manifest.get('releaseId', '')):
+    if (not isinstance(manifest, dict) or type(manifest.get('schemaVersion')) is not int
+            or manifest['schemaVersion'] != 2 or not isinstance(manifest.get('releaseId'), str)
+            or not re.fullmatch(r'[0-9a-f]{40}', manifest['releaseId'])):
         raise ValueError('Invalid manifest identity')
+    if 'quoteAccess' not in manifest or manifest['quoteAccess'] not in ('public', 'admin', None):
+        raise ValueError('Invalid quote access')
+    if not isinstance(manifest.get('files'), list):
+        raise ValueError('Invalid manifest files')
     seen = set()
+    access = {}
     for entry in manifest['files']:
-        name = entry['path']
+        if not isinstance(entry, dict) or entry.get('access') not in ('public', 'admin'):
+            raise ValueError('Invalid file access')
+        name = entry.get('path')
+        if not isinstance(name, str) or not name:
+            raise ValueError('Invalid manifest path')
         path = PurePosixPath(name)
-        if path.is_absolute() or '..' in path.parts or '\\' in name or name in seen or name == 'manifest.json':
+        if (path.is_absolute() or '..' in path.parts or '\\' in name or path.as_posix() != name
+                or name in seen or name == 'manifest.json'):
             raise ValueError('Invalid or duplicate manifest path')
         seen.add(name)
+        access[name] = entry['access']
+        if (type(entry.get('size')) is not int or entry['size'] < 0
+                or not isinstance(entry.get('sha256'), str)
+                or not re.fullmatch(r'[0-9a-f]{64}', entry['sha256'])
+                or not isinstance(entry.get('contentType'), str) or not entry['contentType']):
+            raise ValueError('Invalid file metadata')
         source = directory / name
         if source.is_symlink() or not source.resolve().is_relative_to(directory.resolve()):
             raise ValueError('Unsafe source path')
         data = source.read_bytes()
         if len(data) != entry['size'] or len(data) > 2_200_000 or hashlib.sha256(data).hexdigest() != entry['sha256']:
             raise ValueError(f'Artifact integrity failure: {name}')
+    if access.get('index.html') != 'public' or access.get('admin/index.html') != 'admin':
+        raise ValueError('Invalid catalogue access')
+    quote_access = manifest['quoteAccess']
+    quote_files = {'quote.js', 'quote-contract.mjs', 'lab-07/assets/reading-night.webp'}
+    if quote_access is not None and any(access.get(name) != quote_access for name in quote_files):
+        raise ValueError('Quote files must match quote access')
+    for name, policy in access.items():
+        if name in quote_files or name.startswith(('lab-07/', 'view/lab-07/')):
+            if policy != quote_access:
+                raise ValueError('Lab 7 files must match quote access')
     actual = {p.relative_to(directory).as_posix() for p in directory.rglob('*') if p.is_file()}
     if actual != seen | {'manifest.json'}:
         raise ValueError('Artifact contains files absent from manifest')

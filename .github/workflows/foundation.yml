@@ -45,10 +45,10 @@ jobs:
           umask 077
           printf '%s' "$FOUNDATION_CONFIG" > "$RUNNER_TEMP/foundation.tfvars.json"
           printf '%s' "$FOUNDATION_BACKEND" > "$RUNNER_TEMP/foundation-backend.hcl"
-          tofu -chdir=infra/01-foundation init -input=false -lockfile=readonly -backend-config="$RUNNER_TEMP/foundation-backend.hcl"
-          tofu -chdir=infra/01-foundation plan -input=false \
+          tofu -chdir=infra/foundation init -input=false -lockfile=readonly -backend-config="$RUNNER_TEMP/foundation-backend.hcl"
+          tofu -chdir=infra/foundation plan -input=false \
             -var-file="$RUNNER_TEMP/foundation.tfvars.json" -out="$RUNNER_TEMP/foundation.tfplan"
-          tofu -chdir=infra/01-foundation show -json "$RUNNER_TEMP/foundation.tfplan" > "$RUNNER_TEMP/foundation-plan.json"
+          tofu -chdir=infra/foundation show -json "$RUNNER_TEMP/foundation.tfplan" > "$RUNNER_TEMP/foundation-plan.json"
           python3 -c 'import json,sys; p=json.load(open(sys.argv[1])); assert not any("delete" in r["change"]["actions"] for r in p.get("resource_changes",[])), "Destructive plan requires a separate review"' "$RUNNER_TEMP/foundation-plan.json"
       - name: Apply requested plan
         if: inputs.operation == 'apply'
@@ -56,7 +56,7 @@ jobs:
           YC_TOKEN: ${{ steps.iam.outputs.token }}
           AWS_ACCESS_KEY_ID: ${{ secrets.TF_FOUNDATION_STATE_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_FOUNDATION_STATE_SECRET_ACCESS_KEY }}
-        run: tofu -chdir=infra/01-foundation apply -input=false "$RUNNER_TEMP/foundation.tfplan"
+        run: tofu -chdir=infra/foundation apply -input=false "$RUNNER_TEMP/foundation.tfplan"
       - name: Remove temporary plans
         if: always()
         run: rm -f "$RUNNER_TEMP/foundation.tfvars.json" "$RUNNER_TEMP/foundation-backend.hcl" "$RUNNER_TEMP/foundation.tfplan" "$RUNNER_TEMP/foundation-plan.json"

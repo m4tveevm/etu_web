@@ -23,10 +23,12 @@ const equal = (a, b) => typeof a === 'string' && typeof b === 'string'
 
 export function createApp({ config, oidc, cloud, audit = () => {} }) {
   return async function handle(req, res) {
+    let clearSession = false;
     const reply = (status, body = '', headers = {}) => {
       const bytes = Buffer.isBuffer(body) ? body : Buffer.from(body);
       res.writeHead(status, { ...SECURITY_HEADERS, 'content-type': 'text/plain; charset=utf-8',
-        'content-length': bytes.length, ...headers });
+        'content-length': bytes.length,
+        ...(clearSession ? { 'set-cookie': [clearCookie(SESSION_COOKIE)] } : {}), ...headers });
       res.end(req.method === 'HEAD' ? undefined : bytes);
     };
     const redirect = (location, cookies = []) => reply(303, '', { location, 'set-cookie': cookies });
@@ -35,9 +37,30 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
       if (!req.url || req.url.length > 4096) return reply(400, 'Некорректный запрос.');
       const url = new URL(req.url, config?.origin || 'https://unconfigured.invalid');
       if (url.pathname === '/healthz') return reply(config ? 200 : 503, config ? 'ok' : 'unavailable');
-      if (!config || config.allowlist.length === 0) return reply(503, 'Доступ ещё не настроен.');
+      if (!config) return reply(503, 'Сайт ещё не настроен.');
       if (!['GET', 'HEAD', 'POST'].includes(req.method)) return reply(405, 'Метод не поддерживается.');
       const cookies = req.headers.cookie;
+      let admin;
+      const isAdmin = async () => {
+        if (admin !== undefined) return admin;
+        const session = open(config, SESSION_COOKIE, cookies);
+        if (!session || !allowed(config, session.issuer, session.sub)) {
+          clearSession = true;
+          return (admin = false);
+        }
+        // Recheck the account on every request that can reveal admin-only content.
+        try {
+          await oidc.userinfo(session);
+          return (admin = true);
+        } catch {
+          audit('session_validation_failed');
+          clearSession = true;
+          return (admin = false);
+        }
+      };
+      const requireLogin = () => reply(401, LOGIN_PAGE, {
+        'content-type': 'text/html; charset=utf-8', 'set-cookie': [clearCookie(SESSION_COOKIE)],
+      });
 
       if (url.pathname === '/auth/login.css') {
         if (!['GET', 'HEAD'].includes(req.method)) return reply(405, 'Метод не поддерживается.');
@@ -46,6 +69,7 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
 
       if (url.pathname === '/auth/login') {
         if (req.method !== 'GET') return reply(405, 'Метод не поддерживается.');
+        if (!config.allowlist.length) return reply(503, 'Вход администратора ещё не настроен.');
         const metadata = await oidc.metadata();
         const state = random();
         const nonce = random();
@@ -62,6 +86,7 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
 
       if (url.pathname === '/auth/callback') {
         if (req.method !== 'GET') return reply(405, 'Метод не поддерживается.');
+        if (!config.allowlist.length) return reply(503, 'Вход администратора ещё не настроен.');
         transactionCleared = true;
         const cleared = [clearCookie(TRANSACTION_COOKIE), clearCookie(SESSION_COOKIE)];
         const transaction = open(config, TRANSACTION_COOKIE, cookies);
@@ -77,7 +102,7 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
         if (!allowed(config, session.issuer, session.sub)) {
           await oidc.revoke(session.accessToken).catch(() => audit('revocation_failed'));
           audit('access_denied');
-          return reply(403, 'Доступ разрешён только приглашённым пользователям.', { 'set-cookie': cleared });
+          return reply(403, 'Этот аккаунт не имеет доступа администратора.', { 'set-cookie': cleared });
         }
         try { await oidc.userinfo(session); } catch (error) {
           await oidc.revoke(session.accessToken).catch(() => audit('revocation_failed'));
@@ -104,22 +129,22 @@ export function createApp({ config, oidc, cloud, audit = () => {} }) {
       }
 
       if (req.method !== 'GET' && req.method !== 'HEAD') return reply(405, 'Метод не поддерживается.');
-      const session = open(config, SESSION_COOKIE, cookies);
-      if (!session || !allowed(config, session.issuer, session.sub)) {
-        return reply(401, LOGIN_PAGE,
-          { 'content-type': 'text/html; charset=utf-8', 'set-cookie': [clearCookie(SESSION_COOKIE)] });
-      }
-      // Deliberately no UserInfo cache: revocation and disabled users apply to every file/API request.
-      try { await oidc.userinfo(session); } catch {
-        audit('session_validation_failed');
-        return reply(401, 'Не удалось подтвердить сессию. Войдите заново.', { 'set-cookie': [clearCookie(SESSION_COOKIE)] });
-      }
       if (url.pathname === '/api/v1/quote') {
         if (req.method !== 'GET') return reply(405, 'Метод не поддерживается.', { allow: 'GET' });
+        const access = await cloud.quoteAccess();
+        if (access === null) return reply(404, 'Страница не найдена.');
+        if (!['public', 'admin'].includes(access)) throw new Error('invalid_access');
+        if (access === 'admin' && !await isAdmin()) return requireLogin();
         return reply(200, JSON.stringify(await cloud.quote()), { 'content-type': 'application/json; charset=utf-8' });
       }
-      const path = requestPath(req.url);
+      let path = requestPath(req.url);
       if (!path || path.startsWith('auth/') || path.startsWith('api/')) return reply(404, 'Страница не найдена.');
+      const hasSession = cookies?.split(';').some((cookie) => cookie.trim().startsWith(`${SESSION_COOKIE}=`));
+      if (path === 'index.html' && hasSession && await isAdmin()) path = 'admin/index.html';
+      const access = await cloud.access(path);
+      if (access === null) return reply(404, 'Страница не найдена.');
+      if (!['public', 'admin'].includes(access)) throw new Error('invalid_access');
+      if (access === 'admin' && !await isAdmin()) return requireLogin();
       const object = await cloud.object(path);
       if (!object) return reply(404, 'Страница не найдена.');
       const frameHeaders = /^lab-\d{2}\/[^/]+\.html$/.test(path)
